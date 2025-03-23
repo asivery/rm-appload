@@ -30,6 +30,19 @@ jobs:
           with:
             submodules: true
 
+        - name: Install QMake
+          run: >-
+            apt-get update
+
+            apt-get install -y
+            qt5-qmake 
+            qtbase5-dev 
+            qtbase5-dev-tools 
+            libqt5svg5-dev 
+            libqt5webenginewidgets5 
+            libqt5webchannel5-dev 
+            qtwebengine5-dev
+
         - name: Build Application
           run: |
             chmod a+x ./make.sh
