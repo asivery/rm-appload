@@ -108,5 +108,4 @@ Before you can compile AppLoad, you need to checkout the [XOVI repository][xovi-
 
 To compile AppLoad for on-PC testing, run `qmake6 .`, then `make` in the root of this repository. To build a xovi version, go into `xovi` and run `make.sh`.
 
-
 ## Happy Hacking!
