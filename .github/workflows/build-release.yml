@@ -42,6 +42,11 @@ jobs:
             libqt5webenginewidgets5 
             libqt5webchannel5-dev 
             qtwebengine5-dev
+            qt6-base-dev
+            
+            qtchooser -install qt6 $(which qmake6)
+
+            export QT_SELECT=qt6
 
         - name: Build Application
           run: |
