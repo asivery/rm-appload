@@ -33,6 +33,7 @@ jobs:
         # Most of these dependencies are probably overkill.
         # https://askubuntu.com/a/1460243
         # https://forum.qt.io/topic/90472/unknown-module-s-in-qt-quickcontrols2/3
+        # https://stackoverflow.com/a/39397382
         - name: Install QMake
           run: >-
             apt-get update
@@ -48,6 +49,8 @@ jobs:
             qt6-base-dev
             libgles2-mesa-dev
             qtquickcontrols2-5-dev
+            qtdeclarative5-dev
+            qt6-declarative-dev
             
             qtchooser -install qt6 $(which qmake6)
 
