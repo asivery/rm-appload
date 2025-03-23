@@ -32,8 +32,8 @@ jobs:
 
         - name: Build Application
           run: |
-            sudo chmod a+x ./make.sh
-            sudo ./make.sh
+            chmod a+x ./make.sh
+            ./make.sh
           working-directory: ./xovi
 
         - name: Upload Build Artifact
