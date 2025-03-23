@@ -108,7 +108,7 @@ jobs:
           with:
             upload_url: ${{ steps.create_release_step.outputs.upload_url }}
             asset_path: appload-aarch64.zip/libappload.so
-            asset_name: appload-aarch64.zip
+            asset_name: appload-aarch64.so
             asset_content_type: application/octet-stream
 
         - name: Upload Release Assets (ARM32)
@@ -118,5 +118,5 @@ jobs:
           with:
             upload_url: ${{ steps.create_release_step.outputs.upload_url }}
             asset_path: appload-arm32-testing.zip/libappload.so
-            asset_name: appload-arm32-testing.zip
+            asset_name: appload-arm32-testing.so
             asset_content_type: application/octet-stream
