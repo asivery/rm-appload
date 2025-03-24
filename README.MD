@@ -108,6 +108,6 @@ Before you can compile AppLoad, you need to checkout the [XOVI repository][xovi-
 
 To compile AppLoad for on-PC testing, run `qmake6 .`, then `make` in the root of this repository. To build a xovi version, go into `xovi` and run `make.sh`.
 
-Alternatively, if you don't want to build, you can download the [latest release](https://github.com/Marvin-Brouwer/rmpp-appload/releases).  
+Alternatively, if you don't want to build, you can download the [latest release](https://github.com/asivery/rmpp-appload/releases/latest).  
 
 ## Happy Hacking!
