@@ -63,9 +63,12 @@ jobs:
 
             export QT_SELECT=qt6
 
+
+        # Source the rm toolchain ". /opt/codex/*/*/environment-setup-*"
+        # Then run, ./make.sh from the appload install script
         - name: Build Application
           run: |
-            chmod a+x ./make.sh
+            . /opt/codex/*/*/environment-setup-*
             ./make.sh
           working-directory: ./xovi
 
