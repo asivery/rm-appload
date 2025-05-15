@@ -2,7 +2,7 @@ AFFECT [[8850026134298937527]]
     IMPORT net.asivery.AppLoad 1.0
     IMPORT xofm.libs.gestures 1.0
     TRAVERSE [[8397993708429497603]]
-        LOCATE AFTER [[8626927948892135594]]
+        LOCATE BEFORE [[7983855063553809241]]
         INSERT { property alias appLoadView: _appLoadView }
 
         LOCATE AFTER [[7983855063553809241]]
