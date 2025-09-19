@@ -139,7 +139,7 @@ static void pollInputUpdates() {
                     switch(message.userInput.inputType & 0xF0) {
                         case INPUT_TOUCH_PRESS:
                             xTranslate = ((message.userInput.x * RM2_MAX_TOUCH_X) / (int) clientConnection->width());
-                            yTranslate = RM1_MAX_TOUCH_Y - ((message.userInput.y * RM2_MAX_TOUCH_Y) / (int) clientConnection->height());
+                            yTranslate = RM2_MAX_TOUCH_Y - ((message.userInput.y * RM2_MAX_TOUCH_Y) / (int) clientConnection->height());
                             break;
                         case INPUT_PEN_PRESS:
                             xTranslate = RM2_MAX_DIGI_X - ((message.userInput.y * RM2_MAX_DIGI_X) / clientConnection->height());
