@@ -181,10 +181,10 @@ Rectangle {
                             win.appName = modelData.name;
                             win.supportsScaling = modelData.supportsScaling;
 
-                            win.globalWidth = _appLoadView.width;
-                            win.globalHeight = _appLoadView.height;
+                            win.globalWidth = Qt.binding(function() { return _appLoadView.width; })
+                            win.globalHeight = Qt.binding(function() { return _appLoadView.height; })
                             let deviceAspectRatio, applicationAspectRatio = modelData.aspectRatio;
-                            const aspectRatioId = Math.round(100 * _appLoadView.width / _appLoadView.height);
+                            const aspectRatioId = _appLoadView.width < _appLoadView.height ? Math.round(100 * _appLoadView.width / _appLoadView.height) : Math.round(100 * _appLoadView.height / _appLoadView.width);
                             switch(aspectRatioId) {
                                 case 75:
                                     deviceAspectRatio = "original";

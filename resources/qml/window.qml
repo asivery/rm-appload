@@ -59,8 +59,8 @@ FocusScope {
             };
             root.x = 0;
             root.y = 0;
-            root.width = root.globalWidth;
-            root._height = root.globalHeight;
+            root.width = Qt.binding(function() { return root.globalWidth; });
+            root._height = Qt.binding(function() { return root.globalHeight; });
             root.minimized = false;
             root.fullscreen = true;
         }
