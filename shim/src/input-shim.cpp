@@ -33,6 +33,12 @@
 #define RM1_MIN_ORIENTATION -127
 #define RM1_MAX_ORIENTATION  127
 
+#define RM2_MAX_DIGI_X 20967
+#define RM2_MAX_DIGI_Y 15725
+#define RM2_MAX_TOUCH_X 1403
+#define RM2_MAX_TOUCH_Y 1871
+#define RM2_MAX_PRESSURE 4095
+
 #define RMPP_MAX_TOUCH_X 2064
 #define RMPP_MAX_TOUCH_Y 2832
 #define RMPP_MAX_PRESSURE 4096
@@ -125,6 +131,19 @@ static void pollInputUpdates() {
                         case INPUT_PEN_PRESS:
                             xTranslate = RM1_MAX_DIGI_X - ((message.userInput.y * RM1_MAX_DIGI_X) / clientConnection->height());
                             yTranslate = (message.userInput.x * RM1_MAX_DIGI_Y) / clientConnection->width();
+                            dTranslate = (message.userInput.d * 4096) / 100;
+                            break;
+                    }
+                    break;
+                case SHIM_INPUT_RM2:
+                    switch(message.userInput.inputType & 0xF0) {
+                        case INPUT_TOUCH_PRESS:
+                            xTranslate = ((message.userInput.x * RM2_MAX_TOUCH_X) / (int) clientConnection->width());
+                            yTranslate = RM1_MAX_TOUCH_Y - ((message.userInput.y * RM2_MAX_TOUCH_Y) / (int) clientConnection->height());
+                            break;
+                        case INPUT_PEN_PRESS:
+                            xTranslate = RM2_MAX_DIGI_X - ((message.userInput.y * RM2_MAX_DIGI_X) / clientConnection->height());
+                            yTranslate = (message.userInput.x * RM2_MAX_DIGI_Y) / clientConnection->width();
                             dTranslate = (message.userInput.d * 4096) / 100;
                             break;
                     }
@@ -326,6 +345,7 @@ static int fakeOrOverrideAbsInfo(
 #define MAXFUNC(name) int getMaxEventValueFor ## name() { \
     switch(shimInputType) {                               \
         CASE_FAMILY(name, RM1)                            \
+        CASE_FAMILY(name, RM2)                            \
         CASE_FAMILY(name, RMPP)                           \
         CASE_FAMILY(name, RMPPM)                          \
     }                                                     \

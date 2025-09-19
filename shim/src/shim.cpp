@@ -22,12 +22,17 @@
 #define RM1_BUTTONS "/dev/input/event1"
 #define RM1_DIGITIZER "/dev/input/event0"
 
+#define RM2_TOUCHSCREEN "/dev/input/event2"
+#define RM2_BUTTONS "/dev/input/event0"
+#define RM2_DIGITIZER "/dev/input/event1"
+
 #define RMPP_TOUCHSCREEN "/dev/input/event3"
 #define RMPP_DIGITIZER "/dev/input/event2"
 
 #define DEV_TYPE_RM1 0
-#define DEV_TYPE_RMPP 1
-#define DEV_TYPE_RMPPM 2
+#define DEV_TYPE_RM2 1
+#define DEV_TYPE_RMPP 2
+#define DEV_TYPE_RMPPM 3
 
 bool shimModel;
 bool shimInput;
@@ -55,6 +60,8 @@ void readRealDeviceType() {
         realDeviceType = DEV_TYPE_RMPP;
     } else if(strstr(buffer, "CHIAPPA") != NULL) {
         realDeviceType = DEV_TYPE_RMPPM;
+    } else if(strstr(buffer, "2.0") != NULL) {
+        realDeviceType = DEV_TYPE_RM2;
     } else {
         realDeviceType = DEV_TYPE_RM1;
     }
@@ -119,6 +126,7 @@ void __attribute__((constructor)) __construct () {
         } else if(strcmp(fbMode, "N_RGB888") == 0) {
             switch(realDeviceType) {
                 case DEV_TYPE_RM1:
+                case DEV_TYPE_RM2:
                     CERR << "QTFB does not support native RGB888 mode for rM1" << std::endl;
                     abort();
                     break;
@@ -132,6 +140,7 @@ void __attribute__((constructor)) __construct () {
         } else if(strcmp(fbMode, "N_RGBA8888") == 0) {
             switch(realDeviceType) {
                 case DEV_TYPE_RM1:
+                case DEV_TYPE_RM2:
                     CERR << "QTFB does not support native RGBA8888 mode for rM1" << std::endl;
                     abort();
                     break;
@@ -164,6 +173,8 @@ void __attribute__((constructor)) __construct () {
     if(shimMode != NULL) {
         if(strcmp(shimMode, "RM1") == 0) {
             shimInputType = SHIM_INPUT_RM1;
+        } else if (strcmp(shimMode, "RM2") == 0) {
+            shimInputType = SHIM_INPUT_RM2;
         } else if(strcmp(shimMode, "RMPP") == 0) {
             shimInputType = SHIM_INPUT_RMPP;
         } else if(strcmp(shimMode, "RMPPM") == 0) {
@@ -178,14 +189,23 @@ void __attribute__((constructor)) __construct () {
 
     const char *pathDigitizer, *pathTouchScreen, *pathButtons;
 
-    if(shimInputType == SHIM_INPUT_RM1) {
-        pathDigitizer = RM1_DIGITIZER;
-        pathTouchScreen = RM1_TOUCHSCREEN;
-        pathButtons = RM1_BUTTONS;
-    } else if(shimInputType == SHIM_INPUT_RMPP || shimInputType == SHIM_INPUT_RMPPM) {
-        pathDigitizer = RMPP_DIGITIZER;
-        pathTouchScreen = RMPP_TOUCHSCREEN;
-        pathButtons = "<NONEXISTENT>";
+    switch(shimInputType) {
+        case SHIM_INPUT_RM1:
+            pathDigitizer = RM1_DIGITIZER;
+            pathTouchScreen = RM1_TOUCHSCREEN;
+            pathButtons = RM1_BUTTONS;
+            break;
+        case SHIM_INPUT_RM2:
+            pathDigitizer = RM2_DIGITIZER;
+            pathTouchScreen = RM2_TOUCHSCREEN;
+            pathButtons = RM2_BUTTONS;
+            break;
+        case SHIM_INPUT_RMPP:
+        case SHIM_INPUT_RMPPM:
+            pathDigitizer = RMPP_DIGITIZER;
+            pathTouchScreen = RMPP_TOUCHSCREEN;
+            pathButtons = "<NONEXISTENT>";
+            break;
     }
 
     const char *temp;
