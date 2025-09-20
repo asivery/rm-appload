@@ -54,6 +54,7 @@ void appload::library::ExternalApplication::parseManifest() {
 
     // Optional:
     _isQTFB = jsonObject.value("qtfb").toBool(false);
+    _disablesWindowedMode = jsonObject.value("disablesWindowedMode").toBool(false);
     workingDirectory = jsonObject.value("workingDirectory").toString(root);
     args = jsonObject.value("args").toVariant().toStringList();
     QJsonObject env = jsonObject.value("environment").toObject();
@@ -130,6 +131,10 @@ QString appload::library::ExternalApplication::getAppName() const {
 
 bool appload::library::ExternalApplication::isQTFB() const {
     return _isQTFB;
+}
+
+bool appload::library::ExternalApplication::disablesWindowedMode() const {
+    return _disablesWindowedMode;
 }
 
 void appload::library::terminateExternal(qint64 pid) {

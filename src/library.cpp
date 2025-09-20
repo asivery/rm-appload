@@ -101,10 +101,6 @@ bool appload::library::LoadedApplication::canHaveMultipleFrontends() const {
     return _canHaveMultipleFrontends;
 }
 
-bool appload::library::LoadedApplication::disablesApploadGestures() const {
-    return _disablesApploadGestures;
-}
-
 void appload::library::LoadedApplication::loadFrontend() {
     if(frontendLoaded) return;
     if(!QResource::registerResource(root + "/resources.rcc", "/" + internalIdentifier)) {
@@ -145,7 +141,6 @@ void appload::library::LoadedApplication::parseManifest(){
     loadsBackend = jsonObject.value("loadsBackend").toBool();
     _supportsScaling = jsonObject.value("supportsScaling").toBool(false);
     _canHaveMultipleFrontends = jsonObject.value("canHaveMultipleFrontends").toBool(true);
-    _disablesApploadGestures = jsonObject.value("disablesApploadGestures").toBool(true);
     internalIdentifier = randString(10);
 
     valid = !appName.isEmpty() && !appID.isEmpty() && !qmlEntrypoint.isEmpty();

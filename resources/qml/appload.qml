@@ -180,6 +180,7 @@ Rectangle {
 
                             win.appName = modelData.name;
                             win.supportsScaling = modelData.supportsScaling;
+                            win.disablesWindowedMode = modelData.disablesWindowedMode;
 
                             win.globalWidth = Qt.binding(function() { return _appLoadView.width; })
                             win.globalHeight = Qt.binding(function() { return _appLoadView.height; })
@@ -216,7 +217,10 @@ Rectangle {
                         launchWindow().maximize();
                     }
                     onPressAndHold: () => {
-                        launchWindow();
+                        const window = launchWindow();
+                        if(modelData.disablesWindowedMode) {
+                            window.maximize();
+                        }
                     }
                 }
             }

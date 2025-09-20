@@ -7,7 +7,6 @@
 
 QString AppLoadCoordinator::applicationQMLRoot() const { return _applicationQMLRoot; }
 bool AppLoadCoordinator::loaded() const { return _loaded; }
-bool AppLoadCoordinator::disableApploadGestures() const { return _disableApploadGestures; }
 
 AppLoadCoordinator::AppLoadCoordinator(QObject *parent): QObject(parent), _loaded(false) {
     appload::management::registerCoordinator(this);
@@ -34,7 +33,6 @@ void AppLoadCoordinator::unload() {
 
 void AppLoadCoordinator::loadApplication(QString identifier) {
     appload::library::LoadedApplication *definition = appload::library::get(identifier);
-    emit disableApploadGesturesChanged();
     if(!definition) {
         QDEBUG << "No such application:" << identifier;
         return;

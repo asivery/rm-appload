@@ -47,6 +47,7 @@ namespace appload::library {
         qint64 launch(int qtfbKey) const;
         bool isQTFB() const;
         AspectRatio getAspectRatio() const;
+        bool disablesWindowedMode() const;
 
         bool valid = false;
 
@@ -60,6 +61,7 @@ namespace appload::library {
         QStringList args;
         std::map<QString, QString> environment;
         bool _isQTFB;
+        bool _disablesWindowedMode;
         AspectRatio aspectRatio;
 
         void parseManifest();
@@ -83,7 +85,7 @@ namespace appload::library {
         bool isFrontendRunning() const;
         bool supportsScaling() const;
         bool canHaveMultipleFrontends() const;
-        bool disablesApploadGestures() const;
+        bool disablesWindowedMode() const;
         bool valid = false;
         bool currentlyUnloading = false;
         int loadedFrontendInstanceCount = 0;
@@ -95,7 +97,6 @@ namespace appload::library {
         bool loadsBackend;
         bool _supportsScaling;
         bool _canHaveMultipleFrontends;
-        bool _disablesApploadGestures;
         bool frontendLoaded = false;
         void parseManifest();
     };

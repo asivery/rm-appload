@@ -17,6 +17,7 @@ FocusScope {
     property int minHeight: 700
     property int scaledContentWidth: 0
     property int scaledContentHeight: 0
+    property bool disablesWindowedMode: false
     implicitWidth: 0
     implicitHeight: 0
 
@@ -243,6 +244,7 @@ FocusScope {
             border.width: 2
             border.color: "black"
             color: parent.color
+            visible: !root.disablesWindowedMode
 
             Text {
                 anchors.fill: parent
@@ -267,6 +269,7 @@ FocusScope {
             border.width: 2
             border.color: "black"
             color: parent.color
+            visible: !root.disablesWindowedMode
 
             Text {
                 anchors.fill: parent

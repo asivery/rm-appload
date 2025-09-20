@@ -27,12 +27,13 @@ class AppLoadApplication : public QObject {
     Q_PROPERTY(bool canHaveMultipleFrontends READ canHaveMultipleFrontends)
     Q_PROPERTY(int externalType READ externalType) // 0 - not external, 1 - external (non-graphics), 2 - external (qtfb)
     Q_PROPERTY(QString aspectRatio READ aspectRatio CONSTANT)
+    Q_PROPERTY(bool disablesWindowedMode READ disablesWindowedMode CONSTANT)
 
 public:
     explicit AppLoadApplication(QObject *parent = nullptr)
         : QObject(parent) {}
-    AppLoadApplication(const QString &id, const QString &name, const QString &icon, bool supportsScaling, bool canHaveMultipleFrontends, int externalType, appload::library::AspectRatio aspectRatio, QObject *parent = nullptr)
-        : QObject(parent), _id(id), _name(name), _icon(icon), _supportsScaling(supportsScaling), _canHaveMultipleFrontends(canHaveMultipleFrontends), _externalType(externalType), _aspectRatio(aspectRatio) {}
+    AppLoadApplication(const QString &id, const QString &name, const QString &icon, bool supportsScaling, bool canHaveMultipleFrontends, int externalType, appload::library::AspectRatio aspectRatio, bool disablesWindowedMode, QObject *parent = nullptr)
+        : QObject(parent), _id(id), _name(name), _icon(icon), _supportsScaling(supportsScaling), _canHaveMultipleFrontends(canHaveMultipleFrontends), _externalType(externalType), _aspectRatio(aspectRatio), _disablesWindowedMode(disablesWindowedMode) {}
 
     QString id() const { return _id; }
     QString name() const { return _name; }
@@ -41,6 +42,7 @@ public:
     bool supportsScaling() const { return _supportsScaling; }
     bool canHaveMultipleFrontends() const { return _canHaveMultipleFrontends; }
     int externalType() const { return _externalType; }
+    bool disablesWindowedMode() const { return _disablesWindowedMode; }
 
 private:
     QString _id;
@@ -50,6 +52,7 @@ private:
     bool _canHaveMultipleFrontends;
     int _externalType;
     appload::library::AspectRatio _aspectRatio;
+    bool _disablesWindowedMode;
 };
 
 class AppLoadLibrary : public QObject {
@@ -107,6 +110,7 @@ public:
                                                         entry.second->canHaveMultipleFrontends(),
                                                         INTERNAL,
                                                         appload::library::AspectRatio::AUTO,
+                                                        false,
                                                         this));
         }
         for (const auto &entry : appload::library::getExternals()) {
@@ -117,6 +121,7 @@ public:
                                                         true,
                                                         entry.second->isQTFB() ? EXTERNAL_QTFB : EXTERNAL_NOGUI,
                                                         entry.second->getAspectRatio(),
+                                                        entry.second->disablesWindowedMode(),
                                                         this));
         }
     }

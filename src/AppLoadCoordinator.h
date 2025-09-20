@@ -15,14 +15,12 @@ class AppLoadCoordinator : public QObject
 {
     Q_PROPERTY(QString applicationQMLRoot READ applicationQMLRoot NOTIFY applicationQMLRootChanged)
     Q_PROPERTY(bool loaded READ loaded NOTIFY loadedChanged)
-    Q_PROPERTY(bool disableApploadGestures READ disableApploadGestures NOTIFY disableApploadGesturesChanged)
     Q_OBJECT
 public:
     AppLoadCoordinator(QObject *parent = nullptr);
     ~AppLoadCoordinator();
     QString applicationQMLRoot() const;
     bool loaded() const;
-    bool disableApploadGestures() const;
 
     // Loads an application. If its socket exists, it won't be restarted
     Q_INVOKABLE void loadApplication(QString applicationID);
@@ -39,13 +37,11 @@ public:
     QString getApplicationID();
 signals:
     void applicationQMLRootChanged();
-    void disableApploadGesturesChanged();
     void loadedChanged();
     void unloading();
 private:
     QString _applicationQMLRoot;
     QString applicationLoadedID;
     bool _loaded;
-    bool _disableApploadGestures;
 };
 
