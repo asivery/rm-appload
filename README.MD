@@ -101,6 +101,7 @@ The `external.manifest.json` file has the following properties:
 - args: A list of strings - the arguments that will be passed to the executable
 - qtfb: Boolean - whether or not to allocate a QTFB framebuffer for the application. The framebuffer's ID will be passed as the envvar `QTFB_KEY` to the application
 - aspectRatio: 'auto' (default) | 'original' | 'move' - defines the type of screen the application is built for. Original - rM1 / rM2 / rMPP, move - rMPPM
+- disablesWindowedMode: Boolean - set to true to disable windowed mode for this particular application
 
 ## Compiling AppLoad
 
