@@ -87,7 +87,7 @@ application
 |
 |-> external.manifest.json (explained below)
 |
-|-> icon
+|-> icon.png
 |
 |-> <other app-dependent files>
 ```
