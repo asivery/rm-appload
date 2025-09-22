@@ -101,10 +101,9 @@ Rectangle {
         }
         GridView {
             anchors.top: header.bottom
-            anchors.right: parent.right
             anchors.topMargin: 20
-            anchors.margins: 10
-            width: parent.width - 20
+            anchors.horizontalCenter: parent.horizontalCenter
+            width: Math.round((parent.width - 20) / cellWidth) * cellWidth
             height: parent.height - 100
             id: gridView
             model: library.applications
