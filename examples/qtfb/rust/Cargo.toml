@@ -4,4 +4,4 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-qtfb-client = { path = "../../clients/rust" }
+qtfb-client = { path = "../../../backends/qtfb-clients/rust" }
