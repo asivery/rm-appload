@@ -24,9 +24,9 @@ Inspired by [ddvk's awesome remarkable2-framebuffer](https://github.com/ddvk/rem
     - M_RGBA8888: rgba8888, 954x1696
     - M_RGB565:  rgb565, 954x1696
     - N_RGB888: rgb888, resolution of current device (if possible)
-    - N_RGBA8888: rgb565, resolution of current device (if possible)
+    - N_RGBA8888: rgba8888, resolution of current device (if possible)
     - N_RGB565: rgb565, resolution of current device (if possible)
-    
+
     Default: RM2FB
 - QTFB_SHIM_INPUT_MODE: The device the shim needs to emulate when translating inputs (Values: RM1, RM2, RMPP, RMPPM, NATIVE. Default: RM1)
 - QTFB_SHIM_INPUT_PATH_DIGITIZER / QTFB_SHIM_INPUT_PATH_TOUCHSCREEN / QTFB_SHIM_INPUT_PATH_BUTTONS: The device paths that should be treated as the digitizer / touch screen / buttons when running the app (Default: the device specified by QTFB_SHIM_INPUT_MODE's input devices)
