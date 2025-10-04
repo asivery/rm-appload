@@ -203,7 +203,7 @@ void __attribute__((constructor)) __construct () {
             pathDigitizer = RM2_DIGITIZER;
             pathTouchScreen = RM2_TOUCHSCREEN;
             pathButtons = RM2_BUTTONS;
-            pathNull = RM1_NULL;
+            pathNull = RM2_NULL;
             break;
         case SHIM_INPUT_RMPP:
         case SHIM_INPUT_RMPPM:
