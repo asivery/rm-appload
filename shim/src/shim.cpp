@@ -18,15 +18,17 @@
 #define FAKE_MODEL "reMarkable 1.0"
 #define FILE_MODEL "/sys/devices/soc0/machine"
 
-#define RM1_TOUCHSCREEN "/dev/input/event2"
+#define RM1_TOUCHSCREEN "/dev/input/event2,/dev/input/touchscreen0"
 #define RM1_BUTTONS "/dev/input/event1"
 #define RM1_DIGITIZER "/dev/input/event0"
+#define RM1_NULL "/dev/input/event3"
 
-#define RM2_TOUCHSCREEN "/dev/input/event2"
+#define RM2_TOUCHSCREEN "/dev/input/event2,/dev/input/touchscreen0"
 #define RM2_BUTTONS "/dev/input/event0"
 #define RM2_DIGITIZER "/dev/input/event1"
+#define RM2_NULL "/dev/input/event3"
 
-#define RMPP_TOUCHSCREEN "/dev/input/event3"
+#define RMPP_TOUCHSCREEN "/dev/input/event3,/dev/input/touchscreen0"
 #define RMPP_DIGITIZER "/dev/input/event2"
 
 #define DEV_TYPE_RM1 0
@@ -38,7 +40,7 @@ bool shimModel;
 bool shimInput;
 bool shimFramebuffer;
 int shimInputType = SHIM_INPUT_RM1;
-std::set<fileident_t> *identDigitizer, *identTouchScreen, *identButtons;
+std::set<fileident_t> *identDigitizer, *identTouchScreen, *identButtons, *identNull;
 int realDeviceType;
 
 void readRealDeviceType() {
@@ -104,6 +106,7 @@ void __attribute__((constructor)) __construct () {
     identDigitizer = new std::set<fileident_t>();
     identTouchScreen = new std::set<fileident_t>();
     identButtons = new std::set<fileident_t>();
+    identNull = new std::set<fileident_t>();
 
     readRealDeviceType();
 
@@ -187,41 +190,52 @@ void __attribute__((constructor)) __construct () {
     CERR << "Configured FB type to " << shimType << ", input to " << shimInputType << std::endl;
 
 
-    const char *pathDigitizer, *pathTouchScreen, *pathButtons;
+    const char *pathDigitizer, *pathTouchScreen, *pathButtons, *pathNull;
 
     switch(shimInputType) {
         case SHIM_INPUT_RM1:
             pathDigitizer = RM1_DIGITIZER;
             pathTouchScreen = RM1_TOUCHSCREEN;
             pathButtons = RM1_BUTTONS;
+            pathNull = RM1_NULL;
             break;
         case SHIM_INPUT_RM2:
             pathDigitizer = RM2_DIGITIZER;
             pathTouchScreen = RM2_TOUCHSCREEN;
             pathButtons = RM2_BUTTONS;
+            pathNull = RM1_NULL;
             break;
         case SHIM_INPUT_RMPP:
         case SHIM_INPUT_RMPPM:
             pathDigitizer = RMPP_DIGITIZER;
             pathTouchScreen = RMPP_TOUCHSCREEN;
-            pathButtons = "<NONEXISTENT>";
+            pathButtons = "";
+            pathNull = "";
             break;
     }
 
     const char *temp;
     fileident_t ti;
-    if(temp = getenv("QTFB_SHIM_INPUT_PATH_DIGITIZER")) {
-        iterStringCollectToIdentities(identDigitizer, temp);
+    if((temp = getenv("QTFB_SHIM_INPUT_PATH_DIGITIZER")) == NULL) {
+        temp = pathDigitizer;
     }
-    else if((ti = getFileIdentityFromPath(pathDigitizer)) != -1) identDigitizer->emplace(ti);
-    if(temp = getenv("QTFB_SHIM_INPUT_PATH_TOUCHSCREEN")) {
-        iterStringCollectToIdentities(identTouchScreen, temp);
+    iterStringCollectToIdentities(identDigitizer, temp);
+
+    if((temp = getenv("QTFB_SHIM_INPUT_PATH_TOUCHSCREEN")) == NULL) {
+        temp = pathTouchScreen;
     }
-    else if((ti = getFileIdentityFromPath(pathTouchScreen)) != -1) identTouchScreen->emplace(ti);
-    if(temp = getenv("QTFB_SHIM_INPUT_PATH_BUTTONS")) {
-        iterStringCollectToIdentities(identButtons, temp);
+    iterStringCollectToIdentities(identTouchScreen, temp);
+
+    if((temp = getenv("QTFB_SHIM_INPUT_PATH_BUTTONS")) == NULL) {
+        temp = pathButtons;
     }
-    else if((ti = getFileIdentityFromPath(pathButtons)) != -1) identButtons->emplace(ti);
+    iterStringCollectToIdentities(identButtons, temp);
+
+    if((temp = getenv("QTFB_SHIM_INPUT_PATH_NULL")) == NULL) {
+        temp = pathNull;
+    }
+    iterStringCollectToIdentities(identNull, temp);
+
     for(const auto e : *identDigitizer) {
         CERR << std::hex << "Ident dig: " << e << std::endl;
     }
@@ -230,6 +244,9 @@ void __attribute__((constructor)) __construct () {
     }
     for(const auto e : *identButtons) {
         CERR << "Ident btn: " << e << std::endl;
+    }
+    for(const auto e : *identNull) {
+        CERR << "Ident null: " << e << std::endl;
     }
     std::cerr << std::dec;
 

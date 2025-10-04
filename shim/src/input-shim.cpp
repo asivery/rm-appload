@@ -54,7 +54,7 @@
 
 extern qtfb::ClientConnection *clientConnection;
 extern int shimInputType;
-extern std::set<fileident_t> *identDigitizer, *identTouchScreen, *identButtons;
+extern std::set<fileident_t> *identDigitizer, *identTouchScreen, *identButtons, *identNull;
 
 struct TouchSlotState {
     int x, y;
@@ -65,12 +65,9 @@ std::map<int, TouchSlotState> touchStates;
 #define QUEUE_TOUCH 1
 #define QUEUE_PEN 2
 #define QUEUE_BUTTONS 3
+#define QUEUE_NULL 4
 
 struct PIDEventQueue *pidEventQueue;
-
-static struct {
-    int pipeRead, pipeWrite;
-} nullPipe;
 
 static struct input_event evt(unsigned short type, unsigned short code, int value) {
 #if (__BITS_PER_LONG != 32)
@@ -243,7 +240,6 @@ static void killPollingThread() {
 }
 
 void startPollingThread() {
-    pipe((int*) &nullPipe);
     pollingThreadRunning = true;
     pollingThread = std::thread([&]() {
         while(pollingThreadRunning) {
@@ -271,6 +267,7 @@ int inputShimOpen(fileident_t identity, int flags, mode_t mode) {
     e("dig", *identDigitizer);
     e("tch", *identTouchScreen);
     e("btn", *identButtons);
+    e("null", *identNull);
     #undef e
     if(identDigitizer->find(identity) != identDigitizer->end()) {
         int fd = createInEventMap(QUEUE_PEN, flags);
@@ -286,6 +283,11 @@ int inputShimOpen(fileident_t identity, int flags, mode_t mode) {
     if(identButtons->find(identity) != identButtons->end()) {
         int fd = createInEventMap(QUEUE_BUTTONS, flags);
         CERR << "Open buttons " << fd << std::endl;
+        return fd;
+    }
+    if(identNull->find(identity) != identNull->end()) {
+        int fd = createInEventMap(QUEUE_NULL, flags);
+        CERR << "Open null " << fd << std::endl;
         return fd;
     }
 
