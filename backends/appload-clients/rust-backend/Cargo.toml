@@ -1,0 +1,10 @@
+[package]
+name = "appload-client"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.95"
+async-trait = "0.1.83"
+libc = "0.2.169"
+tokio = { features = ["sync"], version="1" }
