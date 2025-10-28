@@ -1,2 +1,3 @@
 **/*.qmd-pure
 /applications_root/
+/testing_extensions/
