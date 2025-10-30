@@ -193,7 +193,7 @@ void FBController::touchEvent(QTouchEvent *me) {
                     break;
                 case QEventPoint::State::Released:
                     packet.inputType = INPUT_TOUCH_RELEASE;
-                    if(conv.y() > 100 && conv.y() < 200 && checkingGestureDragDown) {
+                    if(conv.y() > 100 && conv.y() < 400 && checkingGestureDragDown) {
                         emit dragDown();
                     }
                     checkingGestureDragDown = false;
