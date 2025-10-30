@@ -38,6 +38,7 @@ struct _32_bit_fb_fix_screeninfo {
 #define remapped_fb_var_screeninfo fb_fix_screeninfo
 #endif
 
+bool respectAppRefreshMode;
 
 int fbShimOpen(const char *file) {
     return strcmp(file, FILE_FB) == 0 ? shmFD : INTERNAL_SHIM_NOT_APPLICABLE; 
@@ -47,16 +48,33 @@ int fbShimClose(int fd) {
     return fd == shmFD ? 0 : INTERNAL_SHIM_NOT_APPLICABLE;
 }
 
+int translateWaveformMode(int waveformMode) {
+    switch(waveformMode) {
+        case 0x02:
+            return REFRESH_MODE_CONTENT;
+        default:
+            return REFRESH_MODE_UI;
+    }
+}
+
 int fbShimIoctl(int fd, unsigned long request, char *ptr) {
     if (fd == shmFD) {
         if (request == MXCFB_SEND_UPDATE) {
             mxcfb_update_data *update = (mxcfb_update_data *) ptr;
+            if(respectAppRefreshMode) {
+                int thisRefreshMode = translateWaveformMode(update->waveform_mode);
+                if(thisRefreshMode != clientConnection->getRefreshMode()) {
+                    clientConnection->setRefreshMode(thisRefreshMode);
+                }
+            }
+
             clientConnection->sendPartialUpdate(
                 update->update_region.left,
                 update->update_region.top,
                 update->update_region.width,
                 update->update_region.height
             );
+
             return 0;
         } else if (request == MXCFB_SET_AUTO_UPDATE_MODE) {
             return 0;

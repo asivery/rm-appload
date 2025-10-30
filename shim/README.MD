@@ -31,3 +31,14 @@ Inspired by [ddvk's awesome remarkable2-framebuffer](https://github.com/ddvk/rem
 - QTFB_SHIM_INPUT_MODE: The device the shim needs to emulate when translating inputs (Values: RM1, RM2, RMPP, RMPPM, NATIVE. Default: RM1)
 - QTFB_SHIM_INPUT_PATH_DIGITIZER / QTFB_SHIM_INPUT_PATH_TOUCHSCREEN / QTFB_SHIM_INPUT_PATH_BUTTONS: The device paths that should be treated as the digitizer / touch screen / buttons when running the app (Default: the device specified by QTFB_SHIM_INPUT_MODE's input devices)
 - QTFB_SHIM_INPUT_PATH_NULL: The device paths that should be blocking, but never yield any data (Default: depends on QTFB_SHIM_INPUT_MODE)
+- QTFB_SHIM_INITIAL_DISPLAY_MODE: The initial refresh mode to set the application to
+
+    Values:
+
+    - FAST
+    - ANIMATE
+    - CONTENT
+    - UI
+
+    Default: UI
+- QTFB_SHIM_RESPECT_APP_REFRESH_MODES: Whether or not to let the application change the refresh mode (Default: true)

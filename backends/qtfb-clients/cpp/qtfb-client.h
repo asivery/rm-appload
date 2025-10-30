@@ -24,9 +24,14 @@ namespace qtfb{
         size_t shmSize;
         bool pollServerPacket(struct ServerMessage &message);
         unsigned short width() const; unsigned short height() const;
+
+        void setRefreshMode(int refreshMode);
+        int getRefreshMode() const;
+        void requestFullRefresh();
     private:
         int fd;
         unsigned short _width, _height;
+        int _refreshMode;
         void _send(const struct ClientMessage &message);
     };
 

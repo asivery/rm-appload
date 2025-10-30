@@ -174,9 +174,13 @@ void FBController::mouseReleaseEvent(QMouseEvent *me) {
 }
 
 void FBController::touchEvent(QTouchEvent *me) {
-    static bool checkingGestureDragDown = false;
-
     if(_framebufferID != -1) {
+        int lenPoints = me->points().length();
+        if(lenPoints == 5 && !refreshedScreenAlready) {
+            emit requestFullRefresh();
+            refreshedScreenAlready = true;
+            QDEBUG << "QTFB Force Refresh";
+        }
         for(const QEventPoint& point : me->points()) {
             QPoint conv = convertPointToQTFBPixels(point.position());
             qtfb::UserInputContents packet {
@@ -195,6 +199,10 @@ void FBController::touchEvent(QTouchEvent *me) {
                     packet.inputType = INPUT_TOUCH_RELEASE;
                     if(conv.y() > 100 && conv.y() < 400 && checkingGestureDragDown) {
                         emit dragDown();
+                    }
+                    if(lenPoints == 1) {
+                        // Last point was released. Free the force-refresh flag.
+                        refreshedScreenAlready = false;
                     }
                     checkingGestureDragDown = false;
                     break;
@@ -228,4 +236,12 @@ void FBController::keyReleaseEvent(QKeyEvent *ke) {
     int k = translateKey(ke->key());
     if(k != -1)
         specialKeyUp(k);
+}
+
+int FBController::refreshMode() const { return _refreshMode; }
+void FBController::setRefreshMode(int rm) {
+    if(rm != _refreshMode) {
+        _refreshMode = rm;
+        emit refreshModeChanged();
+    }
 }

@@ -215,46 +215,54 @@ static int handleInitialize(qtfb::management::ClientConnection *connection, qtfb
     return RESP_OK;
 }
 
-static int handleUpdateRegion(qtfb::management::ClientConnection *connection, qtfb::ClientMessage *inbound) {
+static int handleUpdateRegion(QPointer<FBController> controller, qtfb::management::ClientConnection *connection, qtfb::ClientMessage *inbound) {
+    int x, y, w, h;
+    switch(inbound->update.type) {
+        case UPDATE_ALL:
+            CERR << "Updated all of framebuffer " << connection->fbKey << std::endl;
+            QMetaObject::invokeMethod(controller, [controller]() {
+                controller->markedUpdate();
+            }, Qt::QueuedConnection);
+            break;
+        case UPDATE_PARTIAL:
+            CERR << "Updated region " << inbound->update.x << " " << inbound->update.y << " " << inbound->update.w << " " << inbound->update.h << " of framebuffer " << connection->fbKey << std::endl;
+            x = inbound->update.x, y = inbound->update.y, w = inbound->update.w, h = inbound->update.h;
+            QMetaObject::invokeMethod(controller, [controller, x, y, w, h]() {
+                controller->markedUpdate(QRect(
+                    x,
+                    y,
+                    w,
+                    h
+                ));
+            }, Qt::QueuedConnection);
+            break;
+        default:
+            CERR << "Unknown update method! " << inbound->update.type << " <-- " << inbound->update.x << " " << inbound->update.y << " " << inbound->update.w << " " << inbound->update.h << " of framebuffer " << connection->fbKey << std::endl;
+    }
+
+    return RESP_OK;
+}
+
+static int invokeOnConnectedFramebuffer(qtfb::management::ClientConnection *connection, std::function<int(QPointer<FBController>)> consumer) {
     if(connection->fbKey == -1){
         CERR << "Cannot update region of an uninitialized connection!" << std::endl;
         return RESP_ERR;
     }
     if(qtfb::management::framebuffers.find(connection->fbKey) != qtfb::management::framebuffers.end()) {
-        // Does this require translation?
         QPointer<FBController> controller = qtfb::management::framebuffers[connection->fbKey];
         if(controller.isNull()) {
             return RESP_OK;
         }
-        int x, y, w, h;
-        switch(inbound->update.type) {
-            case UPDATE_ALL:
-                CERR << "Updated all of framebuffer " << connection->fbKey << std::endl;
-                QMetaObject::invokeMethod(controller, [controller]() {
-                    controller->markedUpdate();
-                }, Qt::QueuedConnection);
-                break;
-            case UPDATE_PARTIAL:
-                CERR << "Updated region " << inbound->update.x << " " << inbound->update.y << " " << inbound->update.w << " " << inbound->update.h << " of framebuffer " << connection->fbKey << std::endl;
-                x = inbound->update.x, y = inbound->update.y, w = inbound->update.w, h = inbound->update.h;
-                QMetaObject::invokeMethod(controller, [controller, x, y, w, h]() {
-                    controller->markedUpdate(QRect(
-                        x,
-                        y,
-                        w,
-                        h
-                    ));
-                }, Qt::QueuedConnection);
-                break;
-            default:
-                CERR << "Unknown update method! " << inbound->update.type << " <-- " << inbound->update.x << " " << inbound->update.y << " " << inbound->update.w << " " << inbound->update.h << " of framebuffer " << connection->fbKey << std::endl;
-
-        }
+        return consumer(controller);
     } else {
-        CERR << "Could not find the framebuffer to update." << std::endl;
+        CERR << "Could not find the framebuffer to act upon." << std::endl;
     }
-
     return RESP_OK;
+}
+
+static inline void safetyWaitForEventLoopToCatchUp() {
+    using namespace std::chrono_literals;
+    std::this_thread::sleep_for(1s);
 }
 
 static void managementClientThread(int incomingFD) {
@@ -272,11 +280,36 @@ static void managementClientThread(int incomingFD) {
                 status = handleInitialize(&connection, &inboundMessage, inboundMessage.type);
                 break;
             case MESSAGE_UPDATE:
-                status = handleUpdateRegion(&connection, &inboundMessage);
+                status = invokeOnConnectedFramebuffer(&connection, [&](auto controller) {
+                    return handleUpdateRegion(controller, &connection, &inboundMessage);
+                });
                 break;
             case MESSAGE_TERMINATE:
                 CERR << "The client requested closing the connection." << std::endl;
                 goto close;
+            case MESSAGE_SET_REFRESH_MODE:
+                status = invokeOnConnectedFramebuffer(&connection, [=](auto controller) {
+                    int refresh = inboundMessage.refreshMode;
+                    if(refresh > 4 || refresh < 0) {
+                        CERR << "The client tried to set refresh mode to an undefined value!" << std::endl;
+                        return RESP_ERR;
+                    }
+                    QMetaObject::invokeMethod(controller, [controller, refresh]() {
+                        controller->setRefreshMode(refresh);
+                    });
+                    safetyWaitForEventLoopToCatchUp();
+                    return RESP_OK;
+                });
+                break;
+            case MESSAGE_REQUEST_FULL_REFRESH:
+                status = invokeOnConnectedFramebuffer(&connection, [=](auto controller) {
+                    QMetaObject::invokeMethod(controller, [controller]() {
+                        emit controller->requestFullRefresh();
+                    });
+                    safetyWaitForEventLoopToCatchUp();
+                    return RESP_OK;
+                });
+                break;
             default:
                 CERR << "Client has tried to send a message with an invalid type: " << inboundMessage.type << std::endl;
                 goto close;

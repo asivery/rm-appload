@@ -145,6 +145,24 @@ bool qtfb::ClientConnection::pollServerPacket(struct ServerMessage &message) {
     return true;
 }
 
+void qtfb::ClientConnection::setRefreshMode(int refreshMode) {
+    _refreshMode = refreshMode;
+    _send({
+            .type = MESSAGE_SET_REFRESH_MODE,
+            .refreshMode = refreshMode,
+    });
+}
+
+void qtfb::ClientConnection::requestFullRefresh() {
+    _send({
+            .type = MESSAGE_REQUEST_FULL_REFRESH,
+    });
+}
+
+int qtfb::ClientConnection::getRefreshMode() const {
+    return _refreshMode;
+}
+
 
 qtfb::FBKey qtfb::getIDFromAppload() {
     const char *key = getenv("QTFB_KEY");

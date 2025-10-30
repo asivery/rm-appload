@@ -17,6 +17,8 @@
 #define MESSAGE_CUSTOM_INITIALIZE 2
 #define MESSAGE_TERMINATE 3
 #define MESSAGE_USERINPUT 4
+#define MESSAGE_SET_REFRESH_MODE 5
+#define MESSAGE_REQUEST_FULL_REFRESH 6
 
 #define FBFMT_RM2FB 0
 #define FBFMT_RMPP_RGB888 1
@@ -28,6 +30,14 @@
 
 #define UPDATE_ALL 0
 #define UPDATE_PARTIAL 1
+
+#define REFRESH_MODE_UFAST 0
+#define REFRESH_MODE_FAST 1
+#define REFRESH_MODE_ANIMATE 2
+#define REFRESH_MODE_CONTENT 3
+#define REFRESH_MODE_UI 4
+
+#define DEFAULT_WAVEFORM_MODE REFRESH_MODE_UI
 
 #define INPUT_TOUCH_PRESS 0x10
 #define INPUT_TOUCH_RELEASE 0x11
@@ -82,6 +92,8 @@ namespace qtfb {
             struct UpdateRegionMessageContents update;
             struct CustomInitMessageContents customInit;
             // struct TerminateMessageContents terminate; - Terminate does not send any data.
+            int refreshMode;
+            // no full refresh - Force full refresh does not send any data.
         };
     };
 

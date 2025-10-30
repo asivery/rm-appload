@@ -102,6 +102,7 @@ void __attribute__((constructor)) __construct () {
     shimModel = readEnvvarBoolean("QTFB_SHIM_MODEL", true);
     shimInput = readEnvvarBoolean("QTFB_SHIM_INPUT", true);
     shimFramebuffer = readEnvvarBoolean("QTFB_SHIM_FB", true);
+    respectAppRefreshMode = readEnvvarBoolean("QTFB_SHIM_RESPECT_APP_REFRESH_MODES", true);
 
     identDigitizer = new std::set<fileident_t>();
     identTouchScreen = new std::set<fileident_t>();
@@ -251,6 +252,24 @@ void __attribute__((constructor)) __construct () {
     std::cerr << std::dec;
 
     connectShim();
+
+    if((temp = getenv("QTFB_SHIM_INITIAL_DISPLAY_MODE")) != NULL) {
+        if(strcmp(temp, "UFAST") == 0) {
+            // Uncomment only if you really, *really* love ghosting:
+            // clientConnection->setRefreshMode(REFRESH_MODE_UFAST);
+        } else if(strcmp(temp, "FAST") == 0) {
+            clientConnection->setRefreshMode(REFRESH_MODE_FAST);
+        } else if(strcmp(temp, "ANIMATE") == 0) {
+            clientConnection->setRefreshMode(REFRESH_MODE_ANIMATE);
+        } else if(strcmp(temp, "CONTENT") == 0) {
+            clientConnection->setRefreshMode(REFRESH_MODE_CONTENT);
+        } else if(strcmp(temp, "UI") == 0) {
+            clientConnection->setRefreshMode(REFRESH_MODE_UI);
+        } else {
+            CERR << "Invalid refresh mode " << temp << std::endl;
+        }
+    }
+
     startPollingThread();
 }
 
