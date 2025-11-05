@@ -52,6 +52,12 @@ int translateWaveformMode(int waveformMode) {
     switch(waveformMode) {
         case 0x02:
             return REFRESH_MODE_CONTENT;
+        case 0x03:
+            return REFRESH_MODE_UI;
+        case 0x01:
+            return REFRESH_MODE_FAST;
+        case 0x04:
+            return REFRESH_MODE_ANIMATE;
         default:
             return REFRESH_MODE_UI;
     }
@@ -74,6 +80,10 @@ int fbShimIoctl(int fd, unsigned long request, char *ptr) {
                 update->update_region.width,
                 update->update_region.height
             );
+
+            if(update->update_mode == UPDATE_MODE_FULL) {
+                clientConnection->requestFullRefresh();
+            }
 
             return 0;
         } else if (request == MXCFB_SET_AUTO_UPDATE_MODE) {
