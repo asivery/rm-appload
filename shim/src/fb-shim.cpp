@@ -51,14 +51,19 @@ int fbShimClose(int fd) {
 
 int translateWaveformMode(int waveformMode) {
     switch(waveformMode) {
+        // GC16 refresh mode
         case 0x02:
             return REFRESH_MODE_CONTENT;
+        // GL16 refresh mode
         case 0x03:
             return REFRESH_MODE_UI;
+        // DU refresh mode
         case 0x01:
             return REFRESH_MODE_FAST;
+        // A2 refresh mode
         case 0x04:
             return REFRESH_MODE_ANIMATE;
+        // Fallback to UI mode for unsupported modes
         default:
             return REFRESH_MODE_UI;
     }
