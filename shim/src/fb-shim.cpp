@@ -39,6 +39,7 @@ struct _32_bit_fb_fix_screeninfo {
 #endif
 
 bool respectAppRefreshMode;
+bool respectFullRefreshRequests;
 
 int fbShimOpen(const char *file) {
     return strcmp(file, FILE_FB) == 0 ? shmFD : INTERNAL_SHIM_NOT_APPLICABLE; 
@@ -81,7 +82,7 @@ int fbShimIoctl(int fd, unsigned long request, char *ptr) {
                 update->update_region.height
             );
 
-            if(update->update_mode == UPDATE_MODE_FULL) {
+            if(update->update_mode == UPDATE_MODE_FULL && respectFullRefreshRequests) {
                 clientConnection->requestFullRefresh();
             }
 

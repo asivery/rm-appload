@@ -42,3 +42,4 @@ Inspired by [ddvk's awesome remarkable2-framebuffer](https://github.com/ddvk/rem
 
     Default: UI
 - QTFB_SHIM_RESPECT_APP_REFRESH_MODES: Whether or not to let the application change the refresh mode (Default: true)
+- QTFB_SHIM_RESPECT_FULL_REFRESH_REQUESTS: Whether or not to perform full refreshes when the application requests them (Default: false)
