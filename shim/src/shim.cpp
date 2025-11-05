@@ -103,6 +103,7 @@ void __attribute__((constructor)) __construct () {
     shimInput = readEnvvarBoolean("QTFB_SHIM_INPUT", true);
     shimFramebuffer = readEnvvarBoolean("QTFB_SHIM_FB", true);
     respectAppRefreshMode = readEnvvarBoolean("QTFB_SHIM_RESPECT_APP_REFRESH_MODES", true);
+    respectFullRefreshRequests = readEnvvarBoolean("QTFB_SHIM_RESPECT_FULL_REFRESH_REQUESTS", false);
 
     identDigitizer = new std::set<fileident_t>();
     identTouchScreen = new std::set<fileident_t>();

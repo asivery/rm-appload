@@ -1,6 +1,7 @@
 #pragma once
 
 extern bool respectAppRefreshMode;
+extern bool respectFullRefreshRequests;
 
 int fbShimOpen(const char *file);
 int fbShimClose(int fd);
