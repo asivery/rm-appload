@@ -74,7 +74,7 @@ bool readEnvvarBoolean(const char *name, bool _default) {
     if(value == NULL) {
         return _default;
     }
-    return strcmp(value, "1") == 0;
+    return (strcmp(value, "1") == 0) || (strcasecmp(value, "true") == 0) || (strcasecmp(value, "yes") == 0);
 }
 
 static void iterStringCollectToIdentities(std::set<fileident_t> *out, const char *str){
