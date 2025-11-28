@@ -24,6 +24,7 @@ class AppLoadApplication : public QObject {
     Q_PROPERTY(QString name READ name CONSTANT)
     Q_PROPERTY(QString icon READ icon CONSTANT)
     Q_PROPERTY(bool supportsScaling READ supportsScaling)
+    Q_PROPERTY(bool supportsVirtualKeyboard READ supportsVirtualKeyboard)
     Q_PROPERTY(bool canHaveMultipleFrontends READ canHaveMultipleFrontends)
     Q_PROPERTY(int externalType READ externalType) // 0 - not external, 1 - external (non-graphics), 2 - external (qtfb)
     Q_PROPERTY(QString aspectRatio READ aspectRatio CONSTANT)
@@ -32,14 +33,15 @@ class AppLoadApplication : public QObject {
 public:
     explicit AppLoadApplication(QObject *parent = nullptr)
         : QObject(parent) {}
-    AppLoadApplication(const QString &id, const QString &name, const QString &icon, bool supportsScaling, bool canHaveMultipleFrontends, int externalType, appload::library::AspectRatio aspectRatio, bool disablesWindowedMode, QObject *parent = nullptr)
-        : QObject(parent), _id(id), _name(name), _icon(icon), _supportsScaling(supportsScaling), _canHaveMultipleFrontends(canHaveMultipleFrontends), _externalType(externalType), _aspectRatio(aspectRatio), _disablesWindowedMode(disablesWindowedMode) {}
+    AppLoadApplication(const QString &id, const QString &name, const QString &icon, bool supportsScaling, bool supportsVirtualKeyboard, bool canHaveMultipleFrontends, int externalType, appload::library::AspectRatio aspectRatio, bool disablesWindowedMode, QObject *parent = nullptr)
+        : QObject(parent), _id(id), _name(name), _icon(icon), _supportsScaling(supportsScaling), _supportsVirtualKeyboard(supportsVirtualKeyboard), _canHaveMultipleFrontends(canHaveMultipleFrontends), _externalType(externalType), _aspectRatio(aspectRatio), _disablesWindowedMode(disablesWindowedMode) {}
 
     QString id() const { return _id; }
     QString name() const { return _name; }
     QString icon() const { return _icon; }
     QString aspectRatio() const { return appload::library::aspectRatioToString(_aspectRatio); }
     bool supportsScaling() const { return _supportsScaling; }
+    bool supportsVirtualKeyboard() const { return _supportsVirtualKeyboard; }
     bool canHaveMultipleFrontends() const { return _canHaveMultipleFrontends; }
     int externalType() const { return _externalType; }
     bool disablesWindowedMode() const { return _disablesWindowedMode; }
@@ -49,6 +51,7 @@ private:
     QString _name;
     QString _icon;
     bool _supportsScaling;
+    bool _supportsVirtualKeyboard;
     bool _canHaveMultipleFrontends;
     int _externalType;
     appload::library::AspectRatio _aspectRatio;
@@ -107,6 +110,7 @@ public:
                                                         entry.second->getAppName(),
                                                         entry.second->getIconPath(),
                                                         entry.second->supportsScaling(),
+                                                        false,
                                                         entry.second->canHaveMultipleFrontends(),
                                                         INTERNAL,
                                                         appload::library::AspectRatio::AUTO,
@@ -118,6 +122,7 @@ public:
                                                         entry.second->getAppName(),
                                                         entry.second->getIconPath(),
                                                         false,
+                                                        entry.second->supportsVirtualKeyboard(),
                                                         true,
                                                         entry.second->isQTFB() ? EXTERNAL_QTFB : EXTERNAL_NOGUI,
                                                         entry.second->getAspectRatio(),
