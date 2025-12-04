@@ -24,6 +24,7 @@ FocusScope {
 
     property alias appName: _appName.text
     property bool supportsScaling: false
+    property bool supportsVirtualKeyboard: false
     property var qtfbKey: -1
     property int appPid: -1
     property bool minimized: false
@@ -284,6 +285,69 @@ FocusScope {
                 onClicked: () => {
                     if(fullscreen) maximize(); // Cannot have a full screen minimized app.
                     minimized = !minimized;
+                }
+            }
+        }
+
+        Rectangle {
+            id: virtualKeyboardButton
+            width: parent.height
+            height: parent.height
+            anchors.left: parent.left
+            border.width: 2
+            border.color: "black"
+            color: parent.color
+            visible: supportsVirtualKeyboard
+
+            TextArea {
+                anchors.fill: parent
+                color: "white"
+                text: " "
+
+                function sendVirtualKeyCode(code) {
+                    windowCanvas.virtualKeyboardKeyDown(code);
+                    
+                    // Hold each key press for 100 milliseconds
+                    (function(c) {
+                        var t = Qt.createQmlObject('import QtQuick 2.5; Timer { interval: 100; repeat: false }', virtualKeyboardButton);
+
+                        t.triggered.connect(function() {
+                            windowCanvas.virtualKeyboardKeyUp(c);
+                            
+                            t.destroy();
+                        });
+
+                        t.start();
+                    })(code);
+                }
+
+                onFocusChanged: {
+                    if (focus) {
+                        cursorPosition = 1;
+                        sendVirtualKeyCode(0xf001) // Arbitrary unused keycode
+                    } else {
+                        sendVirtualKeyCode(0xf000)
+                    }
+                }
+
+                onTextChanged: {
+                    if (text.length == 0) { // Backspace pressed
+                        sendVirtualKeyCode(8)
+                    } else if (text.indexOf('\n') != -1) { // Enter pressed
+                        sendVirtualKeyCode(13)
+                    } else if (text.length == 2) { // Regular key pressed
+                        var lastChar = text.charAt(text.length - 1)
+
+                        if (text[0] != ' ') {
+                            lastChar = text[0]
+                        }
+
+                        sendVirtualKeyCode(lastChar.charCodeAt(0))
+                    }
+
+                    text = " ";
+
+                    cursorPosition = 1;
                 }
             }
         }

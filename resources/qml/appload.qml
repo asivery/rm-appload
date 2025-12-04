@@ -179,6 +179,7 @@ Rectangle {
 
                             win.appName = modelData.name;
                             win.supportsScaling = modelData.supportsScaling;
+                            win.supportsVirtualKeyboard = modelData.supportsVirtualKeyboard;
                             win.disablesWindowedMode = modelData.disablesWindowedMode;
 
                             win.globalWidth = Qt.binding(function() { return _appLoadView.width; })

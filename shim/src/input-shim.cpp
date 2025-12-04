@@ -17,6 +17,7 @@
 #include <dlfcn.h>
 #include <poll.h>
 #include <algorithm>
+#include <tuple>
 
 #include "qtfb-client/qtfb-client.h"
 
@@ -54,7 +55,7 @@
 
 extern qtfb::ClientConnection *clientConnection;
 extern int shimInputType;
-extern std::set<fileident_t> *identDigitizer, *identTouchScreen, *identButtons, *identNull;
+extern std::set<fileident_t> *identDigitizer, *identTouchScreen, *identButtons, *identVirtualKeyboard, *identNull;
 
 struct TouchSlotState {
     int x, y;
@@ -65,7 +66,8 @@ std::map<int, TouchSlotState> touchStates;
 #define QUEUE_TOUCH 1
 #define QUEUE_PEN 2
 #define QUEUE_BUTTONS 3
-#define QUEUE_NULL 4
+#define QUEUE_VIRTUALKEYBOARD 4
+#define QUEUE_NULL 5
 
 struct PIDEventQueue *pidEventQueue;
 
@@ -96,6 +98,50 @@ static int mapKey(int x) {
         case INPUT_BTN_X_HOME: return KEY_HOME;
     }
     return 0;
+}
+
+const bool isShifted(int ascii) {
+    if (ascii >= '!' && ascii <= '&') return true;
+    if (ascii >= '(' && ascii <= '+') return true;
+    if (ascii >= ':' && ascii <= ':') return true;
+    if (ascii >= '<' && ascii <= '<') return true;
+    if (ascii >= '>' && ascii <= 'Z') return true;
+    if (ascii >= '^' && ascii <= '_') return true;
+    if (ascii >= '{' && ascii <= '~') return true;
+
+    if (ascii >= 0xA2 && ascii <= 0xA3) return true; // ¢ to £
+    if (ascii >= 0xA6 && ascii <= 0xA8) return true; // ¦ to ¨
+    if (ascii >= 0xAF && ascii <= 0xB0) return true; // ¯ to °
+    if (ascii >= 0xB9 && ascii <= 0xB0) return true; // ¹ to °
+    if (ascii >= 0xC0 && ascii <= 0xD6) return true; // À to Ö
+    if (ascii >= 0xD8 && ascii <= 0xDE) return true; // Ø to Þ
+
+    return false;
+}
+
+std::tuple<int, bool> mapAsciiToX11Key(int ascii) {
+    const bool shifted = isShifted(ascii);
+
+    // All ASCII printable characters
+    if (ascii >= ' ' && ascii <= '~') {
+        return {ascii, shifted};
+    }
+
+    // All ASCII printable extended characters
+    if (ascii >= 0x00a0 && ascii <= 0x00ff) {
+        return {ascii, shifted};
+    }
+
+    // ASCII unprintable characters
+    switch (ascii) {
+        case 8:   return {0xff08, false};     // Backspace
+        case 9:   return {0xff09, false};     // Tab
+        case 13:  return {0xff0d, false};     // Enter/Return
+        case 27:  return {0xff1b, false};     // Escape
+        case 127: return {0xffff, false};     // Delete
+    }
+
+    return {0x0000, false};
 }
 
 static void pushToAll(int queueType, struct input_event evt) {
@@ -217,6 +263,7 @@ static void pollInputUpdates() {
                     pushToAll(QUEUE_PEN, evt(EV_ABS, ABS_PRESSURE, dTranslate));
                     pushToAll(QUEUE_PEN, evt(EV_SYN, SYN_REPORT, 0));
                     break;
+                
                 case INPUT_BTN_PRESS:
                     pushToAll(QUEUE_BUTTONS, evt(EV_KEY, mapKey(message.userInput.x), 1));
                     pushToAll(QUEUE_BUTTONS, evt(EV_SYN, SYN_REPORT, 0));
@@ -225,6 +272,42 @@ static void pollInputUpdates() {
                     pushToAll(QUEUE_BUTTONS, evt(EV_KEY, mapKey(message.userInput.x), 0));
                     pushToAll(QUEUE_BUTTONS, evt(EV_SYN, SYN_REPORT, 0));
                     break;
+
+                case INPUT_VKB_PRESS: {
+                    auto [keySym, isShifted] = mapAsciiToX11Key(message.userInput.x);
+
+                    if (keySym != 0x0000) {
+                        if (isShifted) {
+                            pushToAll(QUEUE_VIRTUALKEYBOARD, evt(EV_KEY, 0xffe1, 1));
+                            pushToAll(QUEUE_VIRTUALKEYBOARD, evt(EV_SYN, SYN_REPORT, 0));
+                        }
+
+                        usleep(10000);
+
+                        pushToAll(QUEUE_VIRTUALKEYBOARD, evt(EV_KEY, keySym, 1));
+                        pushToAll(QUEUE_VIRTUALKEYBOARD, evt(EV_SYN, SYN_REPORT, 0));
+                    }
+
+                    break;
+                }
+                case INPUT_VKB_RELEASE: {
+                    auto [keySym, isShifted] = mapAsciiToX11Key(message.userInput.x);
+
+                    if (keySym != 0x0000) {
+                        pushToAll(QUEUE_VIRTUALKEYBOARD, evt(EV_KEY, keySym, 0));
+                        pushToAll(QUEUE_VIRTUALKEYBOARD, evt(EV_SYN, SYN_REPORT, 0));
+
+                        usleep(10000);
+
+                        if (isShifted) {
+                            pushToAll(QUEUE_VIRTUALKEYBOARD, evt(EV_KEY, 0xffe1, 0));
+                            pushToAll(QUEUE_VIRTUALKEYBOARD, evt(EV_SYN, SYN_REPORT, 0));
+                        }
+                    }
+
+                    break;
+                }
+
                 default: break;
             }
         }
@@ -267,6 +350,7 @@ int inputShimOpen(fileident_t identity, int flags, mode_t mode) {
     e("dig", *identDigitizer);
     e("tch", *identTouchScreen);
     e("btn", *identButtons);
+    e("vkb", *identVirtualKeyboard);
     e("null", *identNull);
     #undef e
     if(identDigitizer->find(identity) != identDigitizer->end()) {
@@ -283,6 +367,11 @@ int inputShimOpen(fileident_t identity, int flags, mode_t mode) {
     if(identButtons->find(identity) != identButtons->end()) {
         int fd = createInEventMap(QUEUE_BUTTONS, flags);
         CERR << "Open buttons " << fd << std::endl;
+        return fd;
+    }
+    if(identVirtualKeyboard->find(identity) != identVirtualKeyboard->end()) {
+        int fd = createInEventMap(QUEUE_VIRTUALKEYBOARD, flags);
+        CERR << "Open virtual keyboard " << fd << std::endl;
         return fd;
     }
     if(identNull->find(identity) != identNull->end()) {

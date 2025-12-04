@@ -48,6 +48,7 @@ namespace appload::library {
         bool isQTFB() const;
         AspectRatio getAspectRatio() const;
         bool disablesWindowedMode() const;
+        bool supportsVirtualKeyboard() const;
 
         bool valid = false;
 
@@ -62,6 +63,7 @@ namespace appload::library {
         std::map<QString, QString> environment;
         bool _isQTFB;
         bool _disablesWindowedMode;
+        bool _supportsVirtualKeyboard;
         AspectRatio aspectRatio;
 
         void parseManifest();
