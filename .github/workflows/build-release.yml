@@ -84,10 +84,11 @@ jobs:
         # Copy ~/appload.so to an empty folder to make publishing the zip easier
         - name: Copy artifacts
           run: |
-            mkdir ./result
-            cp ./xovi/appload.so ./shim/build/qtfb-shim.so ./shim/build/qtfb-shim-32bit.so ./result/
+            mkdir -p ./result/shims
+            cp ./xovi/appload.so ./result/
+            cp ./shim/build/qtfb-shim.so ./shim/build/qtfb-shim-32bit.so ./result/shims/
             cd result
-            zip ${{ matrix.artifact_name }}.zip *
+            zip -r ${{ matrix.artifact_name }}.zip *
 
         - name: Upload Build Artifact
           uses: actions/upload-artifact@v4
