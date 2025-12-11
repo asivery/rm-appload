@@ -1,3 +1,11 @@
 **/*.qmd-pure
 /applications_root/
 /testing_extensions/
+/.vscode
+/shim/build
+/xovi/*
+!/xovi/template
+!/xovi/make.sh
+.qmake.stash
+appload
+Makefile

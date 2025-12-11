@@ -137,7 +137,7 @@ void FBController::mouseMoveEvent(QMouseEvent *me) {
     me->accept();
 }
 
-static inline void sendSpecialKey(int key, int pkt, qtfb::FBKey _framebufferID) {
+static inline void sendKeyEvent(int key, int pkt, qtfb::FBKey _framebufferID) {
     if(_framebufferID != -1) {
         qtfb::UserInputContents packet {
             .inputType = pkt,
@@ -150,12 +150,20 @@ static inline void sendSpecialKey(int key, int pkt, qtfb::FBKey _framebufferID) 
     }
 }
 
+void FBController::virtualKeyboardKeyDown(int key) {
+    sendKeyEvent(key, INPUT_VKB_PRESS, _framebufferID);
+}
+
+void FBController::virtualKeyboardKeyUp(int key) {
+    sendKeyEvent(key, INPUT_VKB_RELEASE, _framebufferID);
+}
+
 void FBController::specialKeyDown(int key) {
-    sendSpecialKey(key, INPUT_BTN_PRESS, _framebufferID);
+    sendKeyEvent(key, INPUT_BTN_PRESS, _framebufferID);
 }
 
 void FBController::specialKeyUp(int key) {
-    sendSpecialKey(key, INPUT_BTN_RELEASE, _framebufferID);
+    sendKeyEvent(key, INPUT_BTN_RELEASE, _framebufferID);
 }
 
 void FBController::mouseReleaseEvent(QMouseEvent *me) {
