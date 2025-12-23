@@ -1,2 +1,3 @@
 #pragma once
-#define APPLICATION_DIRECTORY_ROOT "/home/root/xovi/exthome/appload"
+const char *getApplicationDirectoryRoot(void);
+#define APPLICATION_DIRECTORY_ROOT getApplicationDirectoryRoot()

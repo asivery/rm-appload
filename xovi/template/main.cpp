@@ -16,7 +16,9 @@
 bool qRegisterResourceData(int version, const unsigned char *tree, const unsigned char *name, const unsigned char *data);
 
 extern "C" {
+    static const char *applicationRoot;
     void _xovi_construct() {
+        applicationRoot = Environment->getExtensionDirectory("appload");
         appload::library::loadApplications();
         qtfb::management::start();
 
@@ -37,4 +39,8 @@ extern "C" {
         qRegisterResourceData(3, qt_resource_struct, qt_resource_name, qt_resource_data);
         qt_resource_rebuilder$qmldiff_enable_slots_while_processing();
     }
+}
+
+const char *getApplicationDirectoryRoot(void) {
+    return applicationRoot;
 }
