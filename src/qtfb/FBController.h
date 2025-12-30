@@ -52,6 +52,8 @@ public:
     virtual void keyPressEvent(QKeyEvent *ke) override;
     virtual void keyReleaseEvent(QKeyEvent *ke) override;
 
+    Q_INVOKABLE void virtualKeyboardKeyDown(int key);
+    Q_INVOKABLE void virtualKeyboardKeyUp(int key);
 
     Q_INVOKABLE void specialKeyDown(int key);
     Q_INVOKABLE void specialKeyUp(int key);
