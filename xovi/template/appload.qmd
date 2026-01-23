@@ -25,7 +25,8 @@ AFFECT [[8850026134298937527]]
                 ~&7083172477658&~: "qrc:/appload/qml/appload.qml"
 
                 ~&7713401454751279&~: {
-                    _appLoadView.~&6503936152&~.absoluteRoot = ~&6504254477&~;
+                    _appLoadView.~&6503936152&~.absoluteRoot = windowParent;
+                    _appLoadView.item.virtualKeyboardRef = _apploadVirtualKeyboard;
                 }
             }
 
@@ -34,6 +35,30 @@ AFFECT [[8850026134298937527]]
 
                 function onRequestClose() {
                     _appLoadView.~&233748328658231&~ = ~&214625660372&~;
+                }
+            }
+        }
+        LOCATE AFTER ALL
+        INSERT {
+            Item {
+                id: windowParent
+                anchors.fill: parent
+            }
+            Loader {
+                id: _apploadVirtualKeyboard
+
+                property var layout: null
+                property var config: null
+                width: parent.width
+                anchors.bottom: parent.bottom
+                anchors.horizontalCenter: parent.horizontalCenter
+                active: false
+                visible: active
+                source: "qrc:/appload/qml/virtualKeyboard/Keyboard.qml"
+
+                onLoaded: () => {
+                    console.log("Rebuild keyboard data: ", _apploadVirtualKeyboard.layout, _apploadVirtualKeyboard.config);
+                    _apploadVirtualKeyboard.item.rebuildKeyboard(_apploadVirtualKeyboard.layout, _apploadVirtualKeyboard.config);
                 }
             }
         }

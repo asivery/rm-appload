@@ -3,9 +3,8 @@
 /testing_extensions/
 /.vscode
 /shim/build
-/xovi/*
-!/xovi/template
-!/xovi/make.sh
+/xovi/temporary/
 .qmake.stash
 appload
 Makefile
+**/*.so

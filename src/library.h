@@ -30,6 +30,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include "config.h"
+#include "keyboard/layout.h"
 
 class AppLoadLibrary;
 
@@ -38,6 +39,7 @@ namespace appload::library {
         ORIGINAL, MOVE, AUTO,
     };
     QString aspectRatioToString(AspectRatio ratio);
+    extern appload::vk::Layout *defaultLayout;
 
     class ExternalApplication {
         public:
@@ -49,6 +51,7 @@ namespace appload::library {
         AspectRatio getAspectRatio() const;
         bool disablesWindowedMode() const;
         bool supportsVirtualKeyboard() const;
+        const appload::vk::Layout *getVirtualKeyboardLayout() const;
 
         bool valid = false;
 
@@ -63,7 +66,7 @@ namespace appload::library {
         std::map<QString, QString> environment;
         bool _isQTFB;
         bool _disablesWindowedMode;
-        bool _supportsVirtualKeyboard;
+        const appload::vk::Layout *_virtualKeyboardLayout;
         AspectRatio aspectRatio;
 
         void parseManifest();

@@ -53,7 +53,10 @@ void appload::library::ExternalApplication::parseManifest() {
     // Optional:
     _isQTFB = jsonObject.value("qtfb").toBool(false);
     _disablesWindowedMode = jsonObject.value("disablesWindowedMode").toBool(false);
-    _supportsVirtualKeyboard = jsonObject.value("supportsVirtualKeyboard").toBool(false);
+    bool supportsVirtualKeyboard = jsonObject.value("supportsVirtualKeyboard").toBool(false);
+    if(supportsVirtualKeyboard) {
+        this->_virtualKeyboardLayout = appload::library::defaultLayout;
+    }
     workingDirectory = jsonObject.value("workingDirectory").toString(root);
     args = jsonObject.value("args").toVariant().toStringList();
     QJsonObject env = jsonObject.value("environment").toObject();
@@ -136,8 +139,8 @@ bool appload::library::ExternalApplication::disablesWindowedMode() const {
     return _disablesWindowedMode;
 }
 
-bool appload::library::ExternalApplication::supportsVirtualKeyboard() const {
-    return _supportsVirtualKeyboard;
+const appload::vk::Layout *appload::library::ExternalApplication::getVirtualKeyboardLayout() const {
+    return _virtualKeyboardLayout;
 }
 
 void appload::library::terminateExternal(qint64 pid) {

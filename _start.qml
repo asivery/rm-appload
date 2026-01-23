@@ -2,6 +2,8 @@ import QtQuick 2.5
 import QtQuick.Window 2.2
 import QtQuick.Controls 2.5
 
+import net.asivery.AppLoad 1.0
+
 Window {
     visible: true
     title: qsTr("AppLoad - PC emulator")
@@ -30,7 +32,24 @@ Window {
 
             anchors.centerIn: parent
 
-            onLoaded: loader.item.visible = true
+            onLoaded: {
+                loader.item.visible = true;
+                loader.item.virtualKeyboardRef = keyboardLoader;
+            }
+        }
+    }
+    Loader {
+        property var layout: null
+        property var config: null
+        id: keyboardLoader
+        source: "qrc:/appload/qml/virtualKeyboard/Keyboard.qml"
+        active: false
+        width: parent.width
+        anchors.bottom: parent.bottom
+        anchors.horizontalCenter: parent.horizontalCenter
+
+        onLoaded: () => {
+            keyboardLoader.item.rebuildKeyboard(keyboardLoader.layout, keyboardLoader.config);
         }
     }
 }

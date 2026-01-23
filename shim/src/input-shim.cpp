@@ -17,7 +17,6 @@
 #include <dlfcn.h>
 #include <poll.h>
 #include <algorithm>
-#include <tuple>
 
 #include "qtfb-client/qtfb-client.h"
 
@@ -100,48 +99,40 @@ static int mapKey(int x) {
     return 0;
 }
 
-const bool isShifted(int ascii) {
-    if (ascii >= '!' && ascii <= '&') return true;
-    if (ascii >= '(' && ascii <= '+') return true;
-    if (ascii >= ':' && ascii <= ':') return true;
-    if (ascii >= '<' && ascii <= '<') return true;
-    if (ascii >= '>' && ascii <= 'Z') return true;
-    if (ascii >= '^' && ascii <= '_') return true;
-    if (ascii >= '{' && ascii <= '~') return true;
-
-    if (ascii >= 0xA2 && ascii <= 0xA3) return true; // ¢ to £
-    if (ascii >= 0xA6 && ascii <= 0xA8) return true; // ¦ to ¨
-    if (ascii >= 0xAF && ascii <= 0xB0) return true; // ¯ to °
-    if (ascii >= 0xB9 && ascii <= 0xB0) return true; // ¹ to °
-    if (ascii >= 0xC0 && ascii <= 0xD6) return true; // À to Ö
-    if (ascii >= 0xD8 && ascii <= 0xDE) return true; // Ø to Þ
-
-    return false;
-}
-
-std::tuple<int, bool> mapAsciiToX11Key(int ascii) {
-    const bool shifted = isShifted(ascii);
-
-    // All ASCII printable characters
-    if (ascii >= ' ' && ascii <= '~') {
-        return {ascii, shifted};
+int mapAsciiToX11Key(int ascii) {
+    // Pure modifiers:
+    switch(ascii){
+        case INPUT_VKB_SHIFTMOD: return 0xffe1;
+        case INPUT_VKB_CTRLMOD: return 0xffe3;
+        case INPUT_VKB_ALTMOD: return 0xffe9;
     }
-
-    // All ASCII printable extended characters
-    if (ascii >= 0x00a0 && ascii <= 0x00ff) {
-        return {ascii, shifted};
-    }
-
+    // So it's not a pure modifier.
     // ASCII unprintable characters
-    switch (ascii) {
-        case 8:   return {0xff08, false};     // Backspace
-        case 9:   return {0xff09, false};     // Tab
-        case 13:  return {0xff0d, false};     // Enter/Return
-        case 27:  return {0xff1b, false};     // Escape
-        case 127: return {0xffff, false};     // Delete
+    switch (ascii & 0xFF) {
+        case 8:                 return 0xff08;     // Backspace
+        case 9:                 return 0xff09;     // Tab
+        case 13:                return 0xff0d;     // Enter/Return
+        case 27:                return 0xff1b;     // Escape
+        case 127:               return 0xffff;     // Delete
+        case INPUT_VKB_LEFT:    return 0xff51;
+        case INPUT_VKB_UP:      return 0xff52;
+        case INPUT_VKB_RIGHT:   return 0xff53;
+        case INPUT_VKB_DOWN:    return 0xff54;
+        case INPUT_VKB_HOME:    return 0xff50;
+        case INPUT_VKB_END:     return 0xff57;
+        case INPUT_VKB_PGUP:    return 0xff55;
+        case INPUT_VKB_PGDOWN:  return 0xff56;
     }
 
-    return {0x0000, false};
+
+    // If shift key pressed, uppercase the ascii
+    if((ascii & INPUT_VKB_SHIFTMOD) && (ascii >= 'a') && (ascii <= 'z')) {
+        ascii -= ' ';
+    }
+    // Mask the pure ascii:
+    ascii &= 0xFF;
+
+    return 0;
 }
 
 static void pushToAll(int queueType, struct input_event evt) {
@@ -263,7 +254,6 @@ static void pollInputUpdates() {
                     pushToAll(QUEUE_PEN, evt(EV_ABS, ABS_PRESSURE, dTranslate));
                     pushToAll(QUEUE_PEN, evt(EV_SYN, SYN_REPORT, 0));
                     break;
-                
                 case INPUT_BTN_PRESS:
                     pushToAll(QUEUE_BUTTONS, evt(EV_KEY, mapKey(message.userInput.x), 1));
                     pushToAll(QUEUE_BUTTONS, evt(EV_SYN, SYN_REPORT, 0));
@@ -274,37 +264,15 @@ static void pollInputUpdates() {
                     break;
 
                 case INPUT_VKB_PRESS: {
-                    auto [keySym, isShifted] = mapAsciiToX11Key(message.userInput.x);
-
-                    if (keySym != 0x0000) {
-                        if (isShifted) {
-                            pushToAll(QUEUE_VIRTUALKEYBOARD, evt(EV_KEY, 0xffe1, 1));
-                            pushToAll(QUEUE_VIRTUALKEYBOARD, evt(EV_SYN, SYN_REPORT, 0));
-                        }
-
-                        usleep(10000);
-
-                        pushToAll(QUEUE_VIRTUALKEYBOARD, evt(EV_KEY, keySym, 1));
-                        pushToAll(QUEUE_VIRTUALKEYBOARD, evt(EV_SYN, SYN_REPORT, 0));
-                    }
-
+                    int code = mapAsciiToX11Key(message.userInput.x);
+                    pushToAll(QUEUE_VIRTUALKEYBOARD, evt(EV_KEY, code, 1));
+                    pushToAll(QUEUE_VIRTUALKEYBOARD, evt(EV_SYN, SYN_REPORT, 0));
                     break;
                 }
                 case INPUT_VKB_RELEASE: {
-                    auto [keySym, isShifted] = mapAsciiToX11Key(message.userInput.x);
-
-                    if (keySym != 0x0000) {
-                        pushToAll(QUEUE_VIRTUALKEYBOARD, evt(EV_KEY, keySym, 0));
-                        pushToAll(QUEUE_VIRTUALKEYBOARD, evt(EV_SYN, SYN_REPORT, 0));
-
-                        usleep(10000);
-
-                        if (isShifted) {
-                            pushToAll(QUEUE_VIRTUALKEYBOARD, evt(EV_KEY, 0xffe1, 0));
-                            pushToAll(QUEUE_VIRTUALKEYBOARD, evt(EV_SYN, SYN_REPORT, 0));
-                        }
-                    }
-
+                    int code = mapAsciiToX11Key(message.userInput.x);
+                    pushToAll(QUEUE_VIRTUALKEYBOARD, evt(EV_KEY, code, 0));
+                    pushToAll(QUEUE_VIRTUALKEYBOARD, evt(EV_SYN, SYN_REPORT, 0));
                     break;
                 }
 
