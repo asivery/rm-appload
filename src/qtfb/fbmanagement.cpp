@@ -130,6 +130,8 @@ static bool createSHM(qtfb::management::ClientBackend *connection, int shmType, 
         connection->shmKey = -1;
         return false;
     }
+    // Clear the framebuffer with white pixels:
+    memset(connection->shm, 0xFF, shmSize);
     CERR << "Defined SHM (" << shmSize << " bytes) at " << (void *) connection->shm << std::endl;
     // We have the SHM defined.
     connection->image = new QImage(connection->shm, width, height, bpl, format, nullptr, nullptr);
