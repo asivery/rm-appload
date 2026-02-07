@@ -1,3 +1,13 @@
 **/*.qmd-pure
 /applications_root/
 /testing_extensions/
+/.vscode
+/shim/build
+/xovi/temporary/
+.qmake.stash
+/appload
+Makefile
+**/*.so
+examples/appload/full/backend/target/
+examples/appload/full/output/
+examples/appload/full/output-rmpp/
