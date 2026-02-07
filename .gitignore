@@ -5,6 +5,9 @@
 /shim/build
 /xovi/temporary/
 .qmake.stash
-appload
+/appload
 Makefile
 **/*.so
+examples/appload/full/backend/target/
+examples/appload/full/output/
+examples/appload/full/output-rmpp/
