@@ -2,6 +2,7 @@
 #include <QQmlApplicationEngine>
 
 #include "AppLoadCoordinator.h"
+#include "Launcher.h"
 #include "AppLibrary.h"
 #include "AppLoad.h"
 #include "management.h"
@@ -61,6 +62,7 @@ int main(int argc, char *argv[])
     qmlRegisterType<AppLoadLibrary>("net.asivery.AppLoad", 1, 0, "AppLoadLibrary");
     qmlRegisterType<AppLoadApplication>("net.asivery.AppLoad", 1, 0, "AppLoadApplication");
     qmlRegisterType<FBController>("net.asivery.Framebuffer", 1, 0, "FBController");
+    qmlRegisterSingletonType<AppLoadLauncher>("net.asivery.AppLoad", 1, 0, "AppLoadLauncher", &AppLoadLauncher::qmlSingleton);
     engine.load(QUrl(QStringLiteral("./_start.qml")));
 
     return a.exec();
