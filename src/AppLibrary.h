@@ -4,6 +4,7 @@
 #include <QProcess>
 #include <QProcessEnvironment>
 #include <QString>
+#include <QMap>
 #include <QImage>
 #include <QJsonDocument>
 #include <QPainter>
@@ -113,10 +114,14 @@ public:
         }
     }
 
-    Q_INVOKABLE qint64 launchExternal(const QString &appID, int qtfbKey) {
+    Q_INVOKABLE qint64 launchExternal(const QString &appID, int qtfbKey, QVariantList _extraArgs, QVariantMap _extraEnv) {
         auto ref = appload::library::getExternals().find(appID);
         if(ref != appload::library::getExternals().end()) {
-            return ref->second->launch(qtfbKey);
+            QStringList extraArgs;
+            QMap<QString, QString> extraEnv;
+            for(const auto &ref : _extraArgs) extraArgs.append(ref.toString());
+            for(const auto [key, value] : _extraEnv.asKeyValueRange()) extraEnv.insert(key, value.toString());
+            return ref->second->launch(qtfbKey, extraArgs, extraEnv);
         }
 
         return -1;

@@ -2,3 +2,8 @@
 linker="aarch64-linux-gnu-gcc"
 [target.aarch64-unknown-linux-musl]
 linker="aarch64-linux-musl-gcc"
+[target.armv7-unknown-linux-gnueabihf]
+rustflags = [
+    "-C", "target-feature=+neon,+vfp4"
+]
+linker="arm-linux-gnueabihf-gcc"

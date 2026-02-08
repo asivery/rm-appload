@@ -80,7 +80,7 @@ void appload::library::ExternalApplication::parseManifest() {
     }
 }
 
-qint64 appload::library::ExternalApplication::launch(int qtfbKey) const {
+qint64 appload::library::ExternalApplication::launch(int qtfbKey, QStringList extraArgs, QMap<QString, QString> extraEnv) const {
     QDEBUG << "Starting external binary" << execPath;
 
     QProcess *process = new QProcess();
@@ -89,13 +89,18 @@ qint64 appload::library::ExternalApplication::launch(int qtfbKey) const {
     for(const auto &entry : environment) {
         env.insert(entry.first, entry.second);
     }
+    for (const auto [key, value] : extraEnv.asKeyValueRange()) {
+        env.insert(key, value);
+    }
     if(qtfbKey != -1) {
         env.insert("QTFB_KEY", QString::number(qtfbKey));
     }
     process->setProcessEnvironment(env);
     process->setWorkingDirectory(workingDirectory);
     process->setProcessChannelMode(QProcess::ForwardedChannels);
-    process->start(execPath, args);
+    QStringList finalArgs = args + extraArgs;
+    for(const auto &arg : extraArgs) finalArgs.append(arg);
+    process->start(execPath, finalArgs);
 
     if (!process->waitForStarted()) {
         qWarning() << "Failed to start process:" << process->errorString();

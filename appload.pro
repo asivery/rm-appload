@@ -9,6 +9,6 @@ SOURCES +=  src/main.cpp src/management.cpp src/AppLoad.cpp src/AppLoadCoordinat
 
 HEADERS +=  src/AppLoad.h src/AppLoadCoordinator.h src/library.h src/AppLibrary.h \
             src/qtfb/FBController.h src/qtfb/fbmanagement.h \
-            src/keyboard/layout.h
+            src/keyboard/layout.h src/Launcher.h
 
 RESOURCES += resources/resources.qrc

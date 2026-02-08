@@ -231,7 +231,7 @@ int appload::library::loadApplications() {
                     CERR << "Encountered an error while processing external " << entryPath << std::endl;
                 } else {
                     loadedCount += 1;
-                    appload::library::externalApplications[QString("external::") + entryPath] = app;
+                    appload::library::externalApplications[QString("external::") + entry->d_name] = app;
                 }
             }
         }

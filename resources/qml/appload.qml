@@ -18,6 +18,96 @@ Rectangle {
     AppLoadLibrary {
         id: library
     }
+    function getMinResolutionFor(device) {
+        switch(device) {
+            case "original": return [400, 533];
+            case "move": return [400, 688];
+        }
+    }
+    function getResolutionOf(device) {
+        switch(device) {
+            case "original": return [1620, 2160];
+            case "move": return [954, 1696];
+        }
+    }
+
+    function launchWindow(modelData, extraArgs, extraEnv) {
+        let qtfbKey = -1;
+        let win;
+
+        if(modelData.externalType === 2 /* EXTERNAL_QTFB */) {
+            qtfbKey = Math.floor(Math.random() * 10000000);
+        }
+        if(modelData.externalType != 1 /* EXTERNAL_NOGUI */) {
+            /* Create a new window*/
+            if(library.isFrontendRunningFor(modelData.id) && !modelData.canHaveMultipleFrontends) {
+                console.log("Cannot load multiple frontends for app. It doesn't support it.");
+                return;
+            }
+            if(windowArchetype.status !== Component.Ready) {
+                console.log("Window object not ready: " + windowArchetype.status);
+                console.log(windowArchetype.errorString());
+                return;
+            }
+            win = windowArchetype.createObject(absoluteRoot, { x: 100, y: 100 });
+            if(win == null) {
+                console.log("Failed to instantiate a window object!");
+                return;
+            }
+
+            win.appName = modelData.name;
+            win.supportsScaling = modelData.supportsScaling;
+            win.virtualKeyboardLayout = modelData.virtualKeyboardLayout;
+            win.disablesWindowedMode = modelData.disablesWindowedMode;
+
+            win.virtualKeyboardRef = _appLoadView.virtualKeyboardRef;
+
+            win.globalWidth = Qt.binding(function() { return _appLoadView.width; })
+            win.globalHeight = Qt.binding(function() { return _appLoadView.height; })
+            let deviceAspectRatio, applicationAspectRatio = modelData.aspectRatio;
+            const aspectRatioId = _appLoadView.width < _appLoadView.height ? Math.round(100 * _appLoadView.width / _appLoadView.height) : Math.round(100 * _appLoadView.height / _appLoadView.width);
+            switch(aspectRatioId) {
+                case 75:
+                    deviceAspectRatio = "original";
+                    break;
+                case 56:
+                    deviceAspectRatio = "move";
+                    break
+            }
+            const realAspectRatio = applicationAspectRatio == "auto" ? deviceAspectRatio : applicationAspectRatio;
+            console.log(`Application starting on device with ${deviceAspectRatio} aspect ratio (${aspectRatioId}). Real aspect ratio of the application is going to be ${realAspectRatio}`);
+            [win.minWidth, win.minHeight] = [win.implicitWidth, win.implicitHeight] = getMinResolutionFor(realAspectRatio);
+            [win.scaledContentWidth, win.scaledContentHeight] = getResolutionOf(realAspectRatio);
+
+            win.qtfbKey = qtfbKey;
+
+            win.closed.connect(() => win.destroy());
+
+        }
+        if(modelData.externalType == 0 /* INTERNAL */) {
+            win.loadApplication(modelData.id);
+        } else if(modelData.externalType == 1 /* EXTERNAL_NOGUI */ || modelData.externalType == 2 /* EXTERNAL_QTFB */) {
+            win.appPid = library.launchExternal(modelData.id, qtfbKey, extraArgs || [], extraEnv || {});
+        }
+
+        return win;
+    }
+
+
+    Connections {
+        target: AppLoadLauncher
+        function onRequestLaunch(id, args, env, windowed) {
+            for(let i of library.applications) {
+                if(i.id === id) {
+                    console.log("Launching: " + id);
+                    const window = launchWindow(i, args, env);
+                    if(i.disablesWindowedMode || !windowed) window.maximize();
+                    return;
+                }
+            }
+            console.log(`No application installed with id: ${id}`);
+        }
+    }
 
     Rectangle {
         anchors.fill: parent
@@ -142,84 +232,11 @@ Rectangle {
 
                 MouseArea {
                     anchors.fill: parent
-                    function getMinResolutionFor(device) {
-                        switch(device) {
-                            case "original": return [400, 533];
-                            case "move": return [400, 688];
-                        }
-                    }
-                    function getResolutionOf(device) {
-                        switch(device) {
-                            case "original": return [1620, 2160];
-                            case "move": return [954, 1696];
-                        }
-                    }
-                    function launchWindow() {
-                        let qtfbKey = -1;
-                        let win;
-
-                        if(modelData.externalType === 2 /* EXTERNAL_QTFB */) {
-                            qtfbKey = Math.floor(Math.random() * 10000000);
-                        }
-                        if(modelData.externalType != 1 /* EXTERNAL_NOGUI */) {
-                            /* Create a new window*/
-                            if(library.isFrontendRunningFor(modelData.id) && !modelData.canHaveMultipleFrontends) {
-                                console.log("Cannot load multiple frontends for app. It doesn't support it.");
-                                return;
-                            }
-                            if(windowArchetype.status !== Component.Ready) {
-                                console.log("Window object not ready: " + windowArchetype.status);
-                                console.log(windowArchetype.errorString());
-                                return;
-                            }
-                            win = windowArchetype.createObject(absoluteRoot, { x: 100, y: 100 });
-                            if(win == null) {
-                                console.log("Failed to instantiate a window object!");
-                                return;
-                            }
-
-                            win.appName = modelData.name;
-                            win.supportsScaling = modelData.supportsScaling;
-                            win.virtualKeyboardLayout = modelData.virtualKeyboardLayout;
-                            win.disablesWindowedMode = modelData.disablesWindowedMode;
-
-                            win.virtualKeyboardRef = _appLoadView.virtualKeyboardRef;
-
-                            win.globalWidth = Qt.binding(function() { return _appLoadView.width; })
-                            win.globalHeight = Qt.binding(function() { return _appLoadView.height; })
-                            let deviceAspectRatio, applicationAspectRatio = modelData.aspectRatio;
-                            const aspectRatioId = _appLoadView.width < _appLoadView.height ? Math.round(100 * _appLoadView.width / _appLoadView.height) : Math.round(100 * _appLoadView.height / _appLoadView.width);
-                            switch(aspectRatioId) {
-                                case 75:
-                                    deviceAspectRatio = "original";
-                                    break;
-                                case 56:
-                                    deviceAspectRatio = "move";
-                                    break
-                            }
-                            const realAspectRatio = applicationAspectRatio == "auto" ? deviceAspectRatio : applicationAspectRatio;
-                            console.log(`Application starting on device with ${deviceAspectRatio} aspect ratio (${aspectRatioId}). Real aspect ratio of the application is going to be ${realAspectRatio}`);
-                            [win.minWidth, win.minHeight] = [win.implicitWidth, win.implicitHeight] = getMinResolutionFor(realAspectRatio);
-                            [win.scaledContentWidth, win.scaledContentHeight] = getResolutionOf(realAspectRatio);
-
-                            win.qtfbKey = qtfbKey;
-
-                            win.closed.connect(() => win.destroy());
-                        }
-                        if(modelData.externalType == 0 /* INTERNAL */) {
-                            win.loadApplication(modelData.id);
-                        } else if(modelData.externalType == 1 /* EXTERNAL_NOGUI */ || modelData.externalType == 2 /* EXTERNAL_QTFB */) {
-                            win.appPid = library.launchExternal(modelData.id, qtfbKey);
-                        }
-
-                        return win;
-                    }
-
                     onClicked: () => {
-                        launchWindow().maximize();
+                        launchWindow(modelData).maximize();
                     }
                     onPressAndHold: () => {
-                        const window = launchWindow();
+                        const window = launchWindow(modelData);
                         if(modelData.disablesWindowedMode) {
                             window.maximize();
                         }

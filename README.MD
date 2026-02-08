@@ -103,6 +103,27 @@ The `external.manifest.json` file has the following properties:
 - aspectRatio: 'auto' (default) | 'original' | 'move' - defines the type of screen the application is built for. Original - rM1 / rM2 / rMPP, move - rMPPM
 - disablesWindowedMode: Boolean - set to true to disable windowed mode for this particular application
 
+## Launching applications programmatically
+
+AppLoad makes it possible to launch applications programmatically. To do so, use the `AppLoadLauncher.launchApplication` method.
+
+> [!NOTE]
+> Extra envvars and arguments are only passed to external applications.
+
+> [!NOTE]
+> External applications' IDs follow the format `external::<name of directory>`
+
+Example:
+
+```qml
+import net.asivery.AppLoad 1.0
+
+function startMyApp() {
+    const isWindowed = true;
+    AppLoadLauncher.launchApplication(id, ["extra", "arguments"], { extra: "environment variables" }, isWindowed);
+}
+```
+
 ## Compiling AppLoad
 
 [xovi-repo]: https://github.com/asivery/xovi

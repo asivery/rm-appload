@@ -46,7 +46,7 @@ namespace appload::library {
         ExternalApplication(QString root);
         QString getIconPath() const;
         QString getAppName() const;
-        qint64 launch(int qtfbKey) const;
+        qint64 launch(int qtfbKey, QStringList extraArgs, QMap<QString, QString> extraEnv) const;
         bool isQTFB() const;
         AspectRatio getAspectRatio() const;
         bool disablesWindowedMode() const;
