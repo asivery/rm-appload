@@ -13,6 +13,7 @@
 #include <QQuickPaintedItem>
 
 #include "library.h"
+#include "keyboard/layout.h"
 
 #define INTERNAL 0
 #define EXTERNAL_NOGUI 1
@@ -29,17 +30,39 @@ class AppLoadApplication : public QObject {
     Q_PROPERTY(int externalType READ externalType) // 0 - not external, 1 - external (non-graphics), 2 - external (qtfb)
     Q_PROPERTY(QString aspectRatio READ aspectRatio CONSTANT)
     Q_PROPERTY(bool disablesWindowedMode READ disablesWindowedMode CONSTANT)
+    Q_PROPERTY(const appload::vk::Layout *const virtualKeyboardLayout READ virtualKeyboardLayout CONSTANT)
 
 public:
     explicit AppLoadApplication(QObject *parent = nullptr)
         : QObject(parent) {}
-    AppLoadApplication(const QString &id, const QString &name, const QString &icon, bool supportsScaling, bool canHaveMultipleFrontends, int externalType, appload::library::AspectRatio aspectRatio, bool disablesWindowedMode, QObject *parent = nullptr)
-        : QObject(parent), _id(id), _name(name), _icon(icon), _supportsScaling(supportsScaling), _canHaveMultipleFrontends(canHaveMultipleFrontends), _externalType(externalType), _aspectRatio(aspectRatio), _disablesWindowedMode(disablesWindowedMode) {}
+    AppLoadApplication(
+        const QString &id,
+        const QString &name,
+        const QString &icon,
+        bool supportsScaling,
+        bool canHaveMultipleFrontends,
+        int externalType,
+        appload::library::AspectRatio aspectRatio,
+        bool disablesWindowedMode,
+        const appload::vk::Layout *vkLayout,
+        QObject *parent = nullptr
+    ):
+        QObject(parent),
+        _id(id),
+        _name(name),
+        _icon(icon),
+        _supportsScaling(supportsScaling),
+        _canHaveMultipleFrontends(canHaveMultipleFrontends),
+        _externalType(externalType),
+        _aspectRatio(aspectRatio),
+        _disablesWindowedMode(disablesWindowedMode),
+        _virtualKeyboardLayout(vkLayout) {}
 
     QString id() const { return _id; }
     QString name() const { return _name; }
     QString icon() const { return _icon; }
     QString aspectRatio() const { return appload::library::aspectRatioToString(_aspectRatio); }
+    const appload::vk::Layout *virtualKeyboardLayout() const { return _virtualKeyboardLayout; }
     bool supportsScaling() const { return _supportsScaling; }
     bool canHaveMultipleFrontends() const { return _canHaveMultipleFrontends; }
     int externalType() const { return _externalType; }
@@ -50,15 +73,18 @@ private:
     QString _name;
     QString _icon;
     bool _supportsScaling;
+    bool _supportsVirtualKeyboard;
     bool _canHaveMultipleFrontends;
     int _externalType;
     appload::library::AspectRatio _aspectRatio;
     bool _disablesWindowedMode;
+    appload::vk::Layout const *_virtualKeyboardLayout;
 };
 
 class AppLoadLibrary : public QObject {
     Q_OBJECT
     Q_PROPERTY(QQmlListProperty<AppLoadApplication> applications READ applications NOTIFY applicationsChanged)
+    Q_PROPERTY(const appload::vk::Layout *defaultLayout READ defaultLayout CONSTANT)
 
 public:
     explicit AppLoadLibrary(QObject *parent = nullptr) : QObject(parent) { appload::library::addGlobalLibraryHandle(this); }
@@ -105,6 +131,8 @@ public:
         appload::library::terminateExternal(pid);
     }
 
+    const appload::vk::Layout *defaultLayout() const { return appload::library::defaultLayout; }
+
     void loadList() {
         clearApplications();
         for (const auto &entry : appload::library::getRef()) {
@@ -116,6 +144,7 @@ public:
                                                         INTERNAL,
                                                         appload::library::AspectRatio::AUTO,
                                                         false,
+                                                        NULL,
                                                         this));
         }
         for (const auto &entry : appload::library::getExternals()) {
@@ -127,6 +156,7 @@ public:
                                                         entry.second->isQTFB() ? EXTERNAL_QTFB : EXTERNAL_NOGUI,
                                                         entry.second->getAspectRatio(),
                                                         entry.second->disablesWindowedMode(),
+                                                        entry.second->getVirtualKeyboardLayout(),
                                                         this));
         }
     }
