@@ -99,7 +99,6 @@ qint64 appload::library::ExternalApplication::launch(int qtfbKey, QStringList ex
     process->setWorkingDirectory(workingDirectory);
     process->setProcessChannelMode(QProcess::ForwardedChannels);
     QStringList finalArgs = args + extraArgs;
-    for(const auto &arg : extraArgs) finalArgs.append(arg);
     process->start(execPath, finalArgs);
 
     if (!process->waitForStarted()) {
