@@ -50,9 +50,25 @@
 #define INPUT_BTN_PRESS 0x30
 #define INPUT_BTN_RELEASE 0x31
 
+#define INPUT_VKB_PRESS 0x40
+#define INPUT_VKB_RELEASE 0x41
+
 #define INPUT_BTN_X_LEFT 0
 #define INPUT_BTN_X_HOME 1
 #define INPUT_BTN_X_RIGHT 2
+
+#define INPUT_VKB_SHIFTMOD 0x100000
+#define INPUT_VKB_CTRLMOD 0x200000
+#define INPUT_VKB_ALTMOD 0x400000
+#define INPUT_VKB_DEL 0x7f
+#define INPUT_VKB_PGUP 0x80
+#define INPUT_VKB_PGDOWN 0x81
+#define INPUT_VKB_DOWN 0x82
+#define INPUT_VKB_UP 0x83
+#define INPUT_VKB_LEFT 0x84
+#define INPUT_VKB_RIGHT 0x85
+#define INPUT_VKB_HOME 0x86
+#define INPUT_VKB_END 0x87
 
 namespace qtfb {
     typedef int FBKey;

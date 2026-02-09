@@ -54,7 +54,7 @@
 
 extern qtfb::ClientConnection *clientConnection;
 extern int shimInputType;
-extern std::set<fileident_t> *identDigitizer, *identTouchScreen, *identButtons, *identNull;
+extern std::set<fileident_t> *identDigitizer, *identTouchScreen, *identButtons, *identVirtualKeyboard, *identNull;
 
 struct TouchSlotState {
     int x, y;
@@ -65,7 +65,8 @@ std::map<int, TouchSlotState> touchStates;
 #define QUEUE_TOUCH 1
 #define QUEUE_PEN 2
 #define QUEUE_BUTTONS 3
-#define QUEUE_NULL 4
+#define QUEUE_VIRTUALKEYBOARD 4
+#define QUEUE_NULL 5
 
 struct PIDEventQueue *pidEventQueue;
 
@@ -95,6 +96,42 @@ static int mapKey(int x) {
         case INPUT_BTN_X_RIGHT: return KEY_RIGHT;
         case INPUT_BTN_X_HOME: return KEY_HOME;
     }
+    return 0;
+}
+
+int mapAsciiToX11Key(int ascii) {
+    // Pure modifiers:
+    switch(ascii){
+        case INPUT_VKB_SHIFTMOD: return 0xffe1;
+        case INPUT_VKB_CTRLMOD: return 0xffe3;
+        case INPUT_VKB_ALTMOD: return 0xffe9;
+    }
+    // So it's not a pure modifier.
+    // ASCII unprintable characters
+    switch (ascii & 0xFF) {
+        case 8:                 return 0xff08;     // Backspace
+        case 9:                 return 0xff09;     // Tab
+        case 13:                return 0xff0d;     // Enter/Return
+        case 27:                return 0xff1b;     // Escape
+        case 127:               return 0xffff;     // Delete
+        case INPUT_VKB_LEFT:    return 0xff51;
+        case INPUT_VKB_UP:      return 0xff52;
+        case INPUT_VKB_RIGHT:   return 0xff53;
+        case INPUT_VKB_DOWN:    return 0xff54;
+        case INPUT_VKB_HOME:    return 0xff50;
+        case INPUT_VKB_END:     return 0xff57;
+        case INPUT_VKB_PGUP:    return 0xff55;
+        case INPUT_VKB_PGDOWN:  return 0xff56;
+    }
+
+
+    // If shift key pressed, uppercase the ascii
+    if((ascii & INPUT_VKB_SHIFTMOD) && (ascii >= 'a') && (ascii <= 'z')) {
+        ascii -= ' ';
+    }
+    // Mask the pure ascii:
+    ascii &= 0xFF;
+
     return 0;
 }
 
@@ -225,6 +262,20 @@ static void pollInputUpdates() {
                     pushToAll(QUEUE_BUTTONS, evt(EV_KEY, mapKey(message.userInput.x), 0));
                     pushToAll(QUEUE_BUTTONS, evt(EV_SYN, SYN_REPORT, 0));
                     break;
+
+                case INPUT_VKB_PRESS: {
+                    int code = mapAsciiToX11Key(message.userInput.x);
+                    pushToAll(QUEUE_VIRTUALKEYBOARD, evt(EV_KEY, code, 1));
+                    pushToAll(QUEUE_VIRTUALKEYBOARD, evt(EV_SYN, SYN_REPORT, 0));
+                    break;
+                }
+                case INPUT_VKB_RELEASE: {
+                    int code = mapAsciiToX11Key(message.userInput.x);
+                    pushToAll(QUEUE_VIRTUALKEYBOARD, evt(EV_KEY, code, 0));
+                    pushToAll(QUEUE_VIRTUALKEYBOARD, evt(EV_SYN, SYN_REPORT, 0));
+                    break;
+                }
+
                 default: break;
             }
         }
@@ -267,6 +318,7 @@ int inputShimOpen(fileident_t identity, int flags, mode_t mode) {
     e("dig", *identDigitizer);
     e("tch", *identTouchScreen);
     e("btn", *identButtons);
+    e("vkb", *identVirtualKeyboard);
     e("null", *identNull);
     #undef e
     if(identDigitizer->find(identity) != identDigitizer->end()) {
@@ -283,6 +335,11 @@ int inputShimOpen(fileident_t identity, int flags, mode_t mode) {
     if(identButtons->find(identity) != identButtons->end()) {
         int fd = createInEventMap(QUEUE_BUTTONS, flags);
         CERR << "Open buttons " << fd << std::endl;
+        return fd;
+    }
+    if(identVirtualKeyboard->find(identity) != identVirtualKeyboard->end()) {
+        int fd = createInEventMap(QUEUE_VIRTUALKEYBOARD, flags);
+        CERR << "Open virtual keyboard " << fd << std::endl;
         return fd;
     }
     if(identNull->find(identity) != identNull->end()) {

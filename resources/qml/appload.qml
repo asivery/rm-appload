@@ -11,6 +11,7 @@ Rectangle {
 
     property var windowArchetype: Qt.createComponent("window.qml")
     property var absoluteRoot: _appLoadView
+    property var virtualKeyboardRef: null
 
     signal requestClose
 
@@ -56,7 +57,10 @@ Rectangle {
 
             win.appName = modelData.name;
             win.supportsScaling = modelData.supportsScaling;
+            win.virtualKeyboardLayout = modelData.virtualKeyboardLayout;
             win.disablesWindowedMode = modelData.disablesWindowedMode;
+
+            win.virtualKeyboardRef = _appLoadView.virtualKeyboardRef;
 
             win.globalWidth = Qt.binding(function() { return _appLoadView.width; })
             win.globalHeight = Qt.binding(function() { return _appLoadView.height; })

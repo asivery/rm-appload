@@ -28,8 +28,6 @@ void appload::library::removeGlobalLibraryHandle(AppLoadLibrary *ptr) {
     }
 }
 
-
-
 void appload::library::ExternalApplication::parseManifest() {
     QString filePath = root + "/external.manifest.json";
     QFile file(filePath);
@@ -55,6 +53,10 @@ void appload::library::ExternalApplication::parseManifest() {
     // Optional:
     _isQTFB = jsonObject.value("qtfb").toBool(false);
     _disablesWindowedMode = jsonObject.value("disablesWindowedMode").toBool(false);
+    bool supportsVirtualKeyboard = jsonObject.value("supportsVirtualKeyboard").toBool(false);
+    if(supportsVirtualKeyboard) {
+        this->_virtualKeyboardLayout = appload::library::defaultLayout;
+    }
     workingDirectory = jsonObject.value("workingDirectory").toString(root);
     args = jsonObject.value("args").toVariant().toStringList();
     QJsonObject env = jsonObject.value("environment").toObject();
@@ -139,6 +141,10 @@ bool appload::library::ExternalApplication::isQTFB() const {
 
 bool appload::library::ExternalApplication::disablesWindowedMode() const {
     return _disablesWindowedMode;
+}
+
+const appload::vk::Layout *appload::library::ExternalApplication::getVirtualKeyboardLayout() const {
+    return _virtualKeyboardLayout;
 }
 
 void appload::library::terminateExternal(qint64 pid) {
