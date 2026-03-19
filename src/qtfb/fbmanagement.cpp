@@ -42,7 +42,9 @@ void tryToMatchUp(qtfb::FBKey key){
     CERR << "Associated connection <==> framebuffer " << key << std::endl;
 }
 
-#define SEND(message) send(connection->clientFD, &message, sizeof(message), 0)
+// Never wait for messages to come through. Not all clients have to be actively waiting for new input.
+// If the socket's buffer was to overflow, simply drop the message.
+#define SEND(message) send(connection->clientFD, &message, sizeof(message), MSG_DONTWAIT)
 
 void qtfb::management::registerController(FBKey key, QPointer<FBController> controller) {
     if(key == -1) return;
