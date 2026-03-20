@@ -6,7 +6,7 @@ on:
       - '*'
 
 env: 
-  XOVI_REPO: $GITHUB_WORKSPACE/xovi-repo
+  XOVI_REPO: ${{github.workspace}}/xovi-repo
 
 jobs:
   build:
