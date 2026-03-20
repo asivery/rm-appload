@@ -6,7 +6,7 @@ on:
       - '*'
 
 env: 
-  XOVI_REPO: ${{GITHUB_WORKSPACE}}/xovi-repo
+  XOVI_REPO: $GITHUB_WORKSPACE/xovi-repo
 
 jobs:
   build:
@@ -32,7 +32,7 @@ jobs:
             submodules: true
 
         - name: Checkout XOVI repo
-          run: git clone https://github.com/asivery/xovi ${{XOVI_REPO}}
+          run: git clone https://github.com/asivery/xovi $XOVI_REPO
 
         # Most of these dependencies are probably overkill.
         # https://askubuntu.com/a/1460243
