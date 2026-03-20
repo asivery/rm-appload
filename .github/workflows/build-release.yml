@@ -6,7 +6,7 @@ on:
       - '*'
 
 env: 
-  XOVI_REPO: ${GITHUB_WORKSPACE}/xovi-repo
+  XOVI_REPO: ${{github.workspace}}/xovi-repo
 
 jobs:
   build:
@@ -17,11 +17,9 @@ jobs:
           - os: "eeems/remarkable-toolchain:latest-rmpp"
             arch: aarch64-unknown-linux-gnu
             artifact_name: appload-aarch64
-            dlfile_url: "https://github.com/asivery/dlfile/releases/latest/download/dlfile-aarch64"
           - os: "eeems/remarkable-toolchain:latest-rm1"
             arch: armv7-unknown-linux-gnueabihf
             artifact_name: appload-arm32
-            dlfile_url: "https://github.com/asivery/dlfile/releases/latest/download/dlfile-armv7hf"
     runs-on: ubuntu-latest
 
     container:
@@ -34,7 +32,7 @@ jobs:
             submodules: true
 
         - name: Checkout XOVI repo
-          run: git clone https://github.com/asivery/xovi ${GITHUB_WORKSPACE}/xovi-repo
+          run: git clone https://github.com/asivery/xovi $XOVI_REPO
 
         # Most of these dependencies are probably overkill.
         # https://askubuntu.com/a/1460243
