@@ -20,8 +20,6 @@ extern "C" {
     static const char *applicationRoot;
     void _xovi_construct() {
         applicationRoot = Environment->getExtensionDirectory("appload");
-        appload::library::loadApplications();
-        qtfb::management::start();
 
         qmlRegisterType<AppLoad>("net.asivery.AppLoad", 1, 0, "AppLoad");
         qmlRegisterType<AppLoadCoordinator>("net.asivery.AppLoad", 1, 0, "AppLoadCoordinator");
@@ -40,6 +38,9 @@ extern "C" {
         qt_resource_rebuilder$qmldiff_disable_slots_while_processing();
         qRegisterResourceData(3, qt_resource_struct, qt_resource_name, qt_resource_data);
         qt_resource_rebuilder$qmldiff_enable_slots_while_processing();
+
+        appload::library::loadApplications();
+        qtfb::management::start();
     }
 }
 

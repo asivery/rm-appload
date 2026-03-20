@@ -6,6 +6,7 @@
 #include <string>
 #include <sstream>
 #include <unistd.h>
+#include <fstream>
 #include "shim.h"
 #include "fb-shim.h"
 #include "input-shim.h"
@@ -40,7 +41,7 @@ bool shimModel;
 bool shimInput;
 bool shimFramebuffer;
 int shimInputType = SHIM_INPUT_RM1;
-std::set<fileident_t> *identDigitizer, *identTouchScreen, *identButtons, *identNull;
+std::set<fileident_t> *identDigitizer, *identTouchScreen, *identButtons, *identVirtualKeyboard, *identNull;
 int realDeviceType;
 
 void readRealDeviceType() {
@@ -108,6 +109,7 @@ void __attribute__((constructor)) __construct () {
     identDigitizer = new std::set<fileident_t>();
     identTouchScreen = new std::set<fileident_t>();
     identButtons = new std::set<fileident_t>();
+    identVirtualKeyboard = new std::set<fileident_t>();
     identNull = new std::set<fileident_t>();
 
     readRealDeviceType();
@@ -192,7 +194,10 @@ void __attribute__((constructor)) __construct () {
     CERR << "Configured FB type to " << shimType << ", input to " << shimInputType << std::endl;
 
 
-    const char *pathDigitizer, *pathTouchScreen, *pathButtons, *pathNull;
+    const char *pathDigitizer, *pathTouchScreen, *pathButtons, *pathVirtualKeyboard, *pathNull;
+
+    pathVirtualKeyboard = "/dev/input/virtual_keyboard";
+    std::ofstream(pathVirtualKeyboard).close();
 
     switch(shimInputType) {
         case SHIM_INPUT_RM1:
@@ -233,6 +238,11 @@ void __attribute__((constructor)) __construct () {
     }
     iterStringCollectToIdentities(identButtons, temp);
 
+    if((temp = getenv("QTFB_SHIM_INPUT_PATH_KEYS")) == NULL) {
+        temp = pathVirtualKeyboard;
+    }
+    iterStringCollectToIdentities(identVirtualKeyboard, temp);
+    
     if((temp = getenv("QTFB_SHIM_INPUT_PATH_NULL")) == NULL) {
         temp = pathNull;
     }
@@ -246,6 +256,9 @@ void __attribute__((constructor)) __construct () {
     }
     for(const auto e : *identButtons) {
         CERR << "Ident btn: " << e << std::endl;
+    }
+    for(const auto e : *identVirtualKeyboard) {
+        CERR << "Ident vkb: " << e << std::endl;
     }
     for(const auto e : *identNull) {
         CERR << "Ident null: " << e << std::endl;

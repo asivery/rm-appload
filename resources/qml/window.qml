@@ -33,6 +33,15 @@ FocusScope {
     property var _height: root.globalHeight / 3
     property var beforeFullscreenData: null
 
+    // Keyboard handling:
+    property var virtualKeyboardLayout: null
+    property var virtualKeyboardRef: null
+    property var keyboardConfig: ({
+        enableStickyness: true,
+        keyUp: code => windowCanvas.virtualKeyboardKeyUp(code),
+        keyDown: code => windowCanvas.virtualKeyboardKeyDown(code),
+    })
+
     // External I/O from this component:
     signal closed
     function loadApplication(appId) {
@@ -289,6 +298,39 @@ FocusScope {
         }
 
         Rectangle {
+            id: virtualKeyboardButton
+            width: parent.height
+            height: parent.height
+            anchors.left: parent.left
+            border.width: 2
+            border.color: "black"
+            color: parent.color
+            visible: virtualKeyboardLayout !== null
+
+            Image {
+                source: "qrc:/appload/icons/keyboard"
+                sourceSize.width: 120
+                sourceSize.height: 120
+                anchors.fill: parent
+                anchors.margins: 10
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: () => {
+                    if(root.virtualKeyboardRef.active && root.virtualKeyboardRef.config === root.keyboardConfig) {
+                        root.virtualKeyboardRef.active = false;
+                    } else {
+                        root.virtualKeyboardRef.config = root.keyboardConfig;
+                        root.virtualKeyboardRef.layout = root.virtualKeyboardLayout;
+                        root.virtualKeyboardRef.active = false;
+                        root.virtualKeyboardRef.active = true;
+                    }
+                }
+            }
+        }
+
+        Rectangle {
             width: parent.width
             height: 2
             anchors.bottom: parent.bottom
@@ -374,6 +416,7 @@ FocusScope {
                     unloadingFunction = loaderScaled.item?.unloading;
                 }
                 if(unloadingFunction) unloadingFunction();
+                root.virtualKeyboardRef.active = false;
                 root.closed();
             }
         }

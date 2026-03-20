@@ -3,8 +3,22 @@
 		<file alias="icons/appload">icons/appload.svg</file>
 		<file alias="icons/reload">icons/reload.svg</file>
 		<file alias="icons/exit">icons/exit.svg</file>
+		<file alias="icons/keyboard">icons/keyboard.svg</file>
 
 		<file>qml/appload.qml</file>
 		<file>qml/window.qml</file>
+		<file>qml/virtualKeyboard/Keyboard.qml</file>
+		<file>qml/virtualKeyboard/Key.qml</file>
+
+		<file>keyboard/default.layout.json</file>
+		<file>keyboard/backspace.png</file>
+		<file>keyboard/down.png</file>
+		<file>keyboard/enter.png</file>
+		<file>keyboard/left.png</file>
+		<file>keyboard/menu.png</file>
+		<file>keyboard/right.png</file>
+		<file>keyboard/shift.png</file>
+		<file>keyboard/tab.png</file>
+		<file>keyboard/up.png</file>
 	</qresource>
 </RCC>
