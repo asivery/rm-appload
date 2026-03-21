@@ -52,12 +52,15 @@ Rectangle {
                     sourceSize.width: 60
                     sourceSize.height: 60
                     anchors.left: parent.left
+                    anchors.verticalCenter: parent.verticalCenter
                 }
                 Text {
                     anchors.left: arrowBack.right
                     anchors.leftMargin: 10
                     anchors.verticalCenter: parent.verticalCenter
-                    font.pointSize: 24
+                    font.pointSize: 20
+                    font.family: "Noto Sans"   
+                    font.weight: Font.Bold     
                     text: qsTr("Back")
                 }
             }
@@ -81,20 +84,25 @@ Rectangle {
                     sourceSize.width: 60
                     sourceSize.height: 60
                     anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
                 }
                 Text {
                     anchors.right: reloadIcon.left
-                    anchors.rightMargin: 10
+                    anchors.rightMargin: 16
                     anchors.verticalCenter: parent.verticalCenter
-                    font.pointSize: 24
+                    font.pointSize: 20
+                    font.family: "Noto Sans"   
+                    font.weight: Font.Bold     
                     text: qsTr("Reload")
                 }
             }
 
             Text {
                 anchors.fill: parent
-                text: "AppLoad"
-                font.pointSize: 40
+                text: "Apps"
+                font.pointSize: 36
+                font.family: "EB Garamond"
+                font.weight: Font.Bold     
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
             }
