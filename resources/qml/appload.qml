@@ -150,21 +150,33 @@ Rectangle {
             }
 
             Rectangle {
+                id: refreshButton
                 anchors.topMargin: 25
                 anchors.rightMargin: 25
                 anchors.top: parent.top
                 anchors.right: parent.right
                 height: 60
                 width: 250
+                property string reloadIconSource: "qrc:/appload/icons/reload"
 
                 MouseArea {
                     anchors.fill: parent
-                    onClicked: () => library.reloadList()
+                    onClicked: () => {
+                        library.reloadList();
+                        refreshButton.reloadIconSource = "qrc:/appload/icons/check";
+                        reloadIconSwitchBackTimer.start();
+                    }
+                }
+
+                Timer {
+                    id: reloadIconSwitchBackTimer
+                    interval: 1000
+                    onTriggered: () => refreshButton.reloadIconSource = "qrc:/appload/icons/reload"
                 }
 
                 Image {
                     id: reloadIcon
-                    source: "qrc:/appload/icons/reload"
+                    source: refreshButton.reloadIconSource
                     sourceSize.width: 60
                     sourceSize.height: 60
                     anchors.right: parent.right

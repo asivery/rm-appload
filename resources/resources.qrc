@@ -3,6 +3,7 @@
 		<file alias="icons/appload">icons/appload.svg</file>
 		<file alias="icons/reload">icons/reload.svg</file>
 		<file alias="icons/exit">icons/exit.svg</file>
+		<file alias="icons/check">icons/check.svg</file>
 
 		<file>qml/appload.qml</file>
 		<file>qml/window.qml</file>
