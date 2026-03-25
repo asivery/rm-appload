@@ -1,5 +1,6 @@
 import QtQuick 2.5
 import QtQuick.Controls 2.5
+import HostWrappers
 
 Rectangle {
     anchors.fill: parent
@@ -17,6 +18,11 @@ Rectangle {
         horizontalAlignment: Text.AlignHCenter
         text: `Hello, world! Counter is ${counter}`
         font.pointSize: 48
+
+        DisplayMethodArea {
+            anchors.fill: parent
+            displayMethod: DisplayMethodArea.FastMotion
+        }
     }
 
     Rectangle {
