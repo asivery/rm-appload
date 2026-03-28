@@ -152,9 +152,17 @@ appload::library::LoadedApplication::~LoadedApplication() {
     }
 }
 static std::mutex loadingMutex;
+appload::vk::Layout *appload::library::defaultLayout = NULL;
 
 int appload::library::loadApplications() {
     loadingMutex.lock();
+    defaultLayout = new appload::vk::Layout(NULL);
+    QResource defaultKeyboardLayout(QString(":/appload/keyboard/default.layout.json"));
+    if(!defaultKeyboardLayout.isValid()) {
+        QDEBUG << "Invalid data in default layout!";
+    } else {
+        defaultLayout->load(defaultKeyboardLayout.uncompressedData());
+    }
     // Make sure all apps are unloaded:
     for(auto entry : appload::library::applications) {
         if(entry.second->isFrontendRunning()) {
