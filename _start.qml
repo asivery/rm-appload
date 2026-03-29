@@ -35,6 +35,11 @@ Window {
             onLoaded: {
                 loader.item.visible = true;
                 loader.item.virtualKeyboardRef = keyboardLoader;
+                const toStart = AppLoadEmuOnly.startApp;
+                if(toStart) {
+                    console.log(`Starting application: ${toStart}`);
+                    AppLoadLauncher.requestLaunch(toStart, [], {}, false);
+                }
             }
         }
     }

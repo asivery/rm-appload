@@ -2,6 +2,7 @@
 #include <QQmlApplicationEngine>
 
 #include "AppLoadCoordinator.h"
+#include "EmuOnly.h"
 #include "Launcher.h"
 #include "AppLibrary.h"
 #include "AppLoad.h"
@@ -63,6 +64,7 @@ int main(int argc, char *argv[])
     qmlRegisterType<AppLoadApplication>("net.asivery.AppLoad", 1, 0, "AppLoadApplication");
     qmlRegisterType<FBController>("net.asivery.Framebuffer", 1, 0, "FBController");
     qmlRegisterSingletonType<AppLoadLauncher>("net.asivery.AppLoad", 1, 0, "AppLoadLauncher", &AppLoadLauncher::qmlSingleton);
+    qmlRegisterSingletonType<AppLoadEmuOnly>("net.asivery.AppLoad", 1, 0, "AppLoadEmuOnly", &AppLoadEmuOnly::qmlSingleton);
     engine.load(QUrl(QStringLiteral("./_start.qml")));
 
     return a.exec();
