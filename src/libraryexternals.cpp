@@ -56,6 +56,8 @@ void appload::library::ExternalApplication::parseManifest() {
     bool supportsVirtualKeyboard = jsonObject.value("supportsVirtualKeyboard").toBool(false);
     if(supportsVirtualKeyboard) {
         this->_virtualKeyboardLayout = appload::library::defaultLayout;
+    } else {
+        this->_virtualKeyboardLayout = nullptr;
     }
     workingDirectory = jsonObject.value("workingDirectory").toString(root);
     args = jsonObject.value("args").toVariant().toStringList();
