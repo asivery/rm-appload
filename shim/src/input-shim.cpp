@@ -132,7 +132,7 @@ int mapAsciiToX11Key(int ascii) {
     // Mask the pure ascii:
     ascii &= 0xFF;
 
-    return 0;
+    return ascii;
 }
 
 static void pushToAll(int queueType, struct input_event evt) {
