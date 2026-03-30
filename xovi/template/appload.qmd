@@ -151,3 +151,28 @@ AFFECT /appload/qml/window.qml
         }
     END TRAVERSE
 END AFFECT
+
+AFFECT /qt/qml/HostWrappers/DisplayMethodArea.qml
+    IMPORT [[6504469795.6504031891.7082625047238]] [[180922.180921]] [[7081372714662]]
+    REDEFINE [[6502786168]]
+        LOCATE BEFORE ALL
+        REPLACE { ~&6502786168&~ } WITH { ~&7081372714662&~.~&10578197394989910333&~ }
+    END REDEFINE
+
+    LOCATE BEFORE ALL
+    TRAVERSE [[7081372714662.10578197394989910333]]
+        REPLACE displayMethodMapping WITH {
+            property ~&197102514&~ displayMethodMapping: [
+                ~&7081372714662&~.~&10578197394989910333&~.~&197061260&~,
+                ~&7081372714662&~.~&10578197394989910333&~.~&6502924770&~,
+                ~&7081372714662&~.~&10578197394989910333&~.~&254477590585233257&~,
+                ~&7081372714662&~.~&10578197394989910333&~.~&5971687&~,
+                ~&7081372714662&~.~&10578197394989910333&~.~&233682693073220&~
+            ]
+        }
+        REDEFINE targetDisplayMethod
+            LOCATE BEFORE ALL
+            REPLACE { targetDisplayMethod } WITH { ~&6504074414&~ }
+        END REDEFINE
+    END TRAVERSE
+END AFFECT

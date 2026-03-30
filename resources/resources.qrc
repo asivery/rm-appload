@@ -22,4 +22,8 @@
 		<file>keyboard/tab.png</file>
 		<file>keyboard/up.png</file>
 	</qresource>
+	<qresource prefix="/qt/qml/">
+		<file>HostWrappers/qmldir</file>
+		<file>HostWrappers/DisplayMethodArea.qml</file>
+	</qresource>
 </RCC>
