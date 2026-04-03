@@ -13,7 +13,11 @@ AFFECT [[8850026134298937527]]
     IMPORT [[6504469795.6504031891.7713050416939675]] [[180922.180921]]
     TRAVERSE [[8397993708429497603]]
         LOCATE BEFORE [[7081645463424]]#[[16535813298890332374]]
-        INSERT { property ~&214620122227&~ appLoadView: _appLoadView }
+        INSERT {
+            property ~&214620122227&~ appLoadView: _appLoadView
+            required property ~&197102514&~ apploadVKB
+            required property ~&197102514&~ apploadWindowParent
+        }
 
         LOCATE AFTER [[7081645463424]]#[[16535813298890332374]]
         INSERT {
@@ -25,8 +29,8 @@ AFFECT [[8850026134298937527]]
                 ~&7083172477658&~: "qrc:/appload/qml/appload.qml"
 
                 ~&7713401454751279&~: {
-                    _appLoadView.~&6503936152&~.absoluteRoot = windowParent;
-                    _appLoadView.item.virtualKeyboardRef = _apploadVirtualKeyboard;
+                    _appLoadView.~&6503936152&~.absoluteRoot = apploadWindowParent;
+                    _appLoadView.item.virtualKeyboardRef = apploadVKB;
                 }
             }
 
@@ -38,7 +42,19 @@ AFFECT [[8850026134298937527]]
                 }
             }
         }
-        LOCATE AFTER ALL
+    END TRAVERSE
+END AFFECT
+
+AFFECT [[2328484894988065446]]
+    TRAVERSE [[8397788359424131273]]
+        TRAVERSE ?#[[254540341572282132]]
+            LOCATE BEFORE ALL
+            INSERT {
+                apploadVKB: _apploadVirtualKeyboard
+                apploadWindowParent: windowParent
+            }
+        END TRAVERSE
+        LOCATE BEFORE [[7081372714662.10578197394989910333]]
         INSERT {
             Item {
                 id: windowParent
