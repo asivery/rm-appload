@@ -8,8 +8,8 @@
 		<file>qml/appload.qml</file>
 		<file>qml/window.qml</file>
 	</qresource>
-	<qresource prefix="/qt/qml/">
-		<file>HostWrappers/qmldir</file>
-		<file>HostWrappers/DisplayMethodArea.qml</file>
+	<qresource prefix="/qt/qml/net/asivery/">
+		<file>ApploadUtils/qmldir</file>
+		<file>ApploadUtils/DisplayMethodArea.qml</file>
 	</qresource>
 </RCC>

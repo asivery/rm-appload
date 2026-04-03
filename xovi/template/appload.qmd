@@ -127,7 +127,7 @@ AFFECT /appload/qml/window.qml
     END TRAVERSE
 END AFFECT
 
-AFFECT /qt/qml/HostWrappers/DisplayMethodArea.qml
+AFFECT /qt/qml/net/asivery/ApploadUtils/DisplayMethodArea.qml
     IMPORT [[6504469795.6504031891.7082625047238]] [[180922.180921]] [[7081372714662]]
     REDEFINE [[6502786168]]
         LOCATE BEFORE ALL
@@ -145,9 +145,9 @@ AFFECT /qt/qml/HostWrappers/DisplayMethodArea.qml
                 ~&7081372714662&~.~&10578197394989910333&~.~&233682693073220&~
             ]
         }
-        REDEFINE targetDisplayMethod
-            LOCATE BEFORE ALL
-            REPLACE { targetDisplayMethod } WITH { ~&6504074414&~ }
-        END REDEFINE
+        LOCATE AFTER ALL
+        INSERT {
+            ~&6504074414&~: displayMethodMapping[displayMethod]
+        }
     END TRAVERSE
 END AFFECT

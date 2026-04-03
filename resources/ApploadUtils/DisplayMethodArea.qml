@@ -1,3 +1,5 @@
+import QtQuick
+
 Item {
     id: root
     
@@ -9,9 +11,7 @@ Item {
         Quality
     }
     
-    property int displayMethod: Interactive
+    property int displayMethod: Interactivity
     
     readonly property var displayMethodMapping: { "from": "to" }
-    
-    targetDisplayMethod: displayMethodMapping[displayMethod]
 }

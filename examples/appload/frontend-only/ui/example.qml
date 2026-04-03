@@ -1,6 +1,6 @@
 import QtQuick 2.5
 import QtQuick.Controls 2.5
-import HostWrappers
+import net.asivery.ApploadUtils
 
 Rectangle {
     anchors.fill: parent
