@@ -22,4 +22,8 @@
 		<file>keyboard/tab.png</file>
 		<file>keyboard/up.png</file>
 	</qresource>
+	<qresource prefix="/qt/qml/net/asivery/">
+		<file>ApploadUtils/qmldir</file>
+		<file>ApploadUtils/DisplayMethodArea.qml</file>
+	</qresource>
 </RCC>
