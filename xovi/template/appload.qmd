@@ -115,7 +115,7 @@ AFFECT [[4911547370760691430]]
 END AFFECT
 
 
-; Reach within the appload files itself:
+; Reach within the appload files themselves:
 AFFECT /appload/qml/window.qml
     IMPORT [[6504469795.6504031891.7713050416939675]] [[180922.180921]]
     IMPORT [[6504469795.6504031891.15778643682317564345]] [[180922.180921]]
@@ -177,18 +177,16 @@ AFFECT /qt/qml/net/asivery/ApploadUtils/DisplayMethodArea.qml
 
     LOCATE BEFORE ALL
     TRAVERSE [[7081372714662.10578197394989910333]]
-        REPLACE displayMethodMapping WITH {
-            property ~&197102514&~ displayMethodMapping: [
+        LOCATE AFTER ALL
+        INSERT {
+            ~&6504074414&~: [
                 ~&7081372714662&~.~&10578197394989910333&~.~&197061260&~,
                 ~&7081372714662&~.~&10578197394989910333&~.~&6502924770&~,
                 ~&7081372714662&~.~&10578197394989910333&~.~&254477590585233257&~,
                 ~&7081372714662&~.~&10578197394989910333&~.~&5971687&~,
                 ~&7081372714662&~.~&10578197394989910333&~.~&233682693073220&~
-            ]
+            ][displayMethod]
         }
-        LOCATE AFTER ALL
-        INSERT {
-            ~&6504074414&~: displayMethodMapping[displayMethod]
-        }
+        REMOVE onDisplayMethodChanged
     END TRAVERSE
 END AFFECT

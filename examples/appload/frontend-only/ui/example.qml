@@ -21,7 +21,7 @@ Rectangle {
 
         DisplayMethodArea {
             anchors.fill: parent
-            displayMethod: DisplayMethodArea.FastMotion
+            displayMethod: DisplayMethodArea.Fast
         }
     }
 

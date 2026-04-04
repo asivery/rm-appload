@@ -2,16 +2,18 @@ import QtQuick
 
 Item {
     id: root
-    
+
     enum Method {
-        FastLocalised,
-        FastBW,
-        FastMotion,
-        Interactivity,
-        Quality
+        UFast,
+        Fast,
+        Animate,
+        Content,
+        UI
     }
-    
-    property int displayMethod: Interactivity
-    
-    readonly property var displayMethodMapping: { "from": "to" }
+
+    property int displayMethod: Content
+
+    onDisplayMethodChanged: () => {
+        console.log("Would change display mode to: " + displayMethod);
+    }
 }
