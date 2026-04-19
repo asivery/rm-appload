@@ -2,11 +2,94 @@
 #include "log.h"
 #include <QDebug>
 #include <QDir>
+#include <QTranslator>
+#include <QCoreApplication>
+#include <QSettings>
+#include <QFile>
+#include <QTextStream>
 
 namespace appload::library {
     static std::map<QString, LoadedApplication*> applications;
     static std::map<QString, ExternalApplication*> externalApplications;
 };
+
+QString getLocale() {
+    // Priority: ENV > Xochitl Config > System Locale
+    // Actually, system locale only support en_US in remarkable OS
+
+    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+    if (env.contains("APP_LOCALE") && !env.value("APP_LOCALE").isEmpty()) {
+        qDebug() << "[AppLoad] Using locale from environment variable APP_LOCALE:" << env.value("APP_LOCALE");
+        return env.value("APP_LOCALE");
+    }
+
+    QString configFile = "/data/xochitl.conf";
+    // Somehow QSettings doesn't work with this file 
+    QFile file(configFile);
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QTextStream in(&file);
+        bool inGeneralGroup = false;
+        while (!in.atEnd()) {
+            QString line = in.readLine().trimmed();
+            if (line.isEmpty() || line.startsWith("#") || line.startsWith(";")) {
+                continue;
+            }
+            if (line.startsWith("[")) {
+                inGeneralGroup = line.contains("General", Qt::CaseInsensitive);
+            } 
+            else if (inGeneralGroup && line.startsWith("Language", Qt::CaseInsensitive)) {
+                QString lang = line.section('=', 1).trimmed();
+                if (!lang.isEmpty()) {
+                    return lang;
+                }
+            }
+        }
+        file.close();
+    } else {
+        qDebug() << "[AppLoad] Failed to open file. Error:" << file.errorString();
+    }
+    qDebug() << "[AppLoad] Xochil Config invalid. Falling back to system locale:" << QLocale::system().name();
+    return QLocale::system().name();
+}
+
+void appload::library::LoadedApplication::loadTranslations(const QString &forceLocaleStr) {
+    QString localeStr = forceLocaleStr.isEmpty() ? getLocale() : forceLocaleStr;
+    QLocale targetLocale(localeStr);
+
+    // Unload before loading new one to support reloading afterwards
+    unloadTranslations();
+    m_appTranslator = new QTranslator(QCoreApplication::instance());
+    
+    QString fsDir = root + "/translations";
+    QString qrcAppDir = ":/" + internalIdentifier + "/translations";
+
+    bool isLoaded = false;
+    QString loadedPath = "";
+
+    if (m_appTranslator->load(targetLocale, appID, "_", fsDir)) {
+        isLoaded = true;
+        loadedPath = fsDir;
+    } else if (m_appTranslator->load(targetLocale, appID, "_", qrcAppDir)) {
+        isLoaded = true;
+        loadedPath = qrcAppDir;
+    } 
+
+    if (isLoaded) {
+        if (QCoreApplication::installTranslator(m_appTranslator)) {
+            qDebug() << "Successfully loaded translation for" << appID 
+                     << targetLocale.name() << "from" << loadedPath;
+        } else {
+            qDebug() << "Failed to install translator for" << appID;
+            delete m_appTranslator;
+            m_appTranslator = nullptr;
+        }
+    } else {
+        qDebug() << "No suitable translation file found for" << appID 
+                 << targetLocale.name() << "in both FS and QRC";
+        delete m_appTranslator;
+        m_appTranslator = nullptr;
+    }
+}
 
 static QString randString(int len)
 {
@@ -106,6 +189,7 @@ void appload::library::LoadedApplication::loadFrontend() {
     if(!QResource::registerResource(root + "/resources.rcc", "/" + internalIdentifier)) {
         QDEBUG << "Failed to load resources for" << appID;
     } else {
+        loadTranslations("");
         frontendLoaded = true;
     }
 }
@@ -113,8 +197,17 @@ void appload::library::LoadedApplication::loadFrontend() {
 void appload::library::LoadedApplication::unloadFrontend() {
     if(!frontendLoaded) return;
     QResource::unregisterResource(root + "/resources.rcc", "/" + internalIdentifier);
+    unloadTranslations();
     frontendLoaded = false;
     QDEBUG << "Resources unloaded for" << appID;
+}
+
+void appload::library::LoadedApplication::unloadTranslations() {
+    if (m_appTranslator) {
+        QCoreApplication::removeTranslator(m_appTranslator);
+        delete m_appTranslator;
+        m_appTranslator = nullptr;
+    }
 }
 
 void appload::library::LoadedApplication::parseManifest(){
