@@ -53,4 +53,9 @@ mod capi {
     extern "C" fn get_socket_path() -> *const libc::c_char {
         SOCKET_PATH.as_ptr() as *const libc::c_char
     }
+
+    #[no_mangle]
+    unsafe extern "C" fn get_buffer(connection: *mut qtfb_client::ClientConnection) -> *const u8 {
+        return connection.as_ref().unwrap().shm.as_ptr()
+    }
 }
