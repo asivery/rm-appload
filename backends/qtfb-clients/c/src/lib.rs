@@ -1,4 +1,5 @@
 mod capi {
+    use std::ffi::c_void;
     use libc::c_int;
     use qtfb_client;
 
@@ -16,6 +17,9 @@ mod capi {
 
     pub type FBKey = u32;
 
+    pub type ClientConnection = c_void;
+
+
     #[repr(C)]
     struct CustomResolution {
         width: u16,
@@ -27,6 +31,7 @@ mod capi {
                                                shm_type: u8,
                                                custom_resolution: *const CustomResolution,
     ) -> *mut qtfb_client::ClientConnection<'a> {
+        //TODO: check with and height ordered correctly
         Box::into_raw(Box::new(qtfb_client::ClientConnection::new(framebuffer_id, shm_type, custom_resolution.as_ref().and_then(|t| Some((t.height, t.width)))).unwrap()))
     }
     #[no_mangle]
