@@ -1,3 +1,5 @@
+pub mod user_input;
+
 use anyhow::{Error, Result};
 use libc::{
     c_void, mmap, munmap, sockaddr_un, socket, AF_UNIX, MAP_FAILED, MAP_SHARED, PROT_READ,
@@ -11,11 +13,13 @@ use std::mem::transmute;
 use std::os::unix::io::{AsRawFd, RawFd};
 use std::ptr;
 use std::slice;
+use crate::user_input::InputEvent;
 
 pub mod constants {
     pub const DEFAULT_SCENE: u32 = 245209899;
     pub const SOCKET_PATH: &str = "/tmp/qtfb.sock";
     pub const MESSAGE_INITIALIZE: u8 = 0;
+    pub const MESSAGE_INPUT: u8 = 4;
     pub const MESSAGE_UPDATE: u8 = 1;
     pub const MESSAGE_CUSTOM_INITIALIZE: u8 = 2;
     pub const UPDATE_ALL: i32 = 0;
@@ -25,6 +29,13 @@ pub mod constants {
     pub const FBFMT_RMPP_RGBA8888: u8 = 2;
 
     pub type FBKey = u32;
+}
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct InputMessage {
+    input_type: InputEvent,
+    dev_id: u32,
+    x: u32, y: u32, d: u32
 }
 
 pub type FBKey = u32;
@@ -76,15 +87,24 @@ struct ClientMessage {
 }
 
 #[repr(C)]
+union ServerMessageContents {
+    init: InitMessageResponseContents,
+    input: InputMessage,
+}
+
+#[repr(C)]
 struct ServerMessage {
     msg_type: u8,
-    init: InitMessageResponseContents,
+    contents: ServerMessageContents,
 }
 
 pub struct ClientConnection<'a> {
     fd: RawFd,
     pub shm: &'a mut [u8],
 }
+
+#[derive(Debug, Clone)]
+struct InvalidMessage;
 
 impl<'a> ClientConnection<'a> {
     pub fn new(
@@ -158,10 +178,10 @@ impl<'a> ClientConnection<'a> {
 
         let mut server_message = ServerMessage {
             msg_type: 0,
-            init: InitMessageResponseContents {
+            contents: ServerMessageContents { init: InitMessageResponseContents {
                 shm_key_defined: 0,
                 shm_size: 0,
-            },
+            }},
         };
 
         let recv_res = unsafe {
@@ -176,14 +196,17 @@ impl<'a> ClientConnection<'a> {
         if recv_res < 1 {
             return Err(Error::new(io::Error::last_os_error()));
         }
-
-        let shm_name = format!("/dev/shm/qtfb_{}", server_message.init.shm_key_defined);
+        if (server_message.msg_type != constants::MESSAGE_INITIALIZE) {
+            return Err(Error::from(io::Error::other("your message here")));
+        }
+        let init_message = unsafe{ server_message.contents.init};
+        let shm_name = format!("/dev/shm/qtfb_{}", init_message.shm_key_defined);
         let shm_fd = OpenOptions::new().read(true).write(true).open(&shm_name)?;
 
         let shm_ptr = unsafe {
             mmap(
                 ptr::null_mut(),
-                server_message.init.shm_size,
+                init_message.shm_size,
                 PROT_READ | PROT_WRITE,
                 MAP_SHARED,
                 shm_fd.as_raw_fd(),
@@ -196,7 +219,7 @@ impl<'a> ClientConnection<'a> {
         }
 
         let shm =
-            unsafe { slice::from_raw_parts_mut(shm_ptr as *mut u8, server_message.init.shm_size) };
+            unsafe { slice::from_raw_parts_mut(shm_ptr as *mut u8, init_message.shm_size) };
 
         Ok(Self { fd, shm })
     }
@@ -249,6 +272,38 @@ impl<'a> ClientConnection<'a> {
             return Err(io::Error::last_os_error());
         }
         Ok(())
+    }
+
+    pub fn poll_input(&self) -> Result<InputMessage> {
+
+        let mut server_message = ServerMessage {
+            msg_type: 0,
+            contents: ServerMessageContents { input: InputMessage {
+                input_type: InputEvent::BtnXLeft,
+                dev_id: 0,
+                x: 0,
+                y: 0,
+                d: 0,
+            }},
+        };
+
+        let recv_res = unsafe {
+            libc::recv(
+                self.fd,
+                &mut server_message as *mut _ as *mut c_void,
+                mem::size_of::<ServerMessage>(),
+                libc::MSG_DONTWAIT,
+            )
+        };
+
+        if recv_res < 1 {
+            return Err(Error::new(io::Error::last_os_error()));
+        }
+        if (server_message.msg_type != constants::MESSAGE_INPUT) {
+            return Err(Error::from(io::Error::other("your message here")));
+        }
+        return Ok(unsafe{ server_message.contents.input});
+
     }
 }
 
