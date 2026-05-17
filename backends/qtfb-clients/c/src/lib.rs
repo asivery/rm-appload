@@ -7,6 +7,7 @@ mod capi {
     use std::ptr::null;
     use libc::c_int;
     use qtfb_client;
+    use qtfb_client::RefreshMode;
     use qtfb_client::user_input::InputEvent;
     use crate::dumbstupidhack;
 
@@ -72,6 +73,19 @@ mod capi {
     #[no_mangle]
     unsafe extern "C" fn qtfb_get_buffer(connection: *mut dumbstupidhack::QTFB_ClientConnection) -> *const u8 {
         return connection.as_ref().unwrap().shm.as_ptr()
+    }
+
+    #[no_mangle]
+    unsafe extern "C" fn qtfb_set_refresh_mode(connection: *mut dumbstupidhack::QTFB_ClientConnection, mode: u32)  -> c_int {
+        let mode_enum = match mode {
+            0 => RefreshMode::UltraFast,
+            1 => RefreshMode::Fast,
+            2 => RefreshMode::Animate,
+            3 => RefreshMode::Content,
+            4 => RefreshMode::UI,
+            _ => return -1,
+        };
+        return connection.as_ref().unwrap().set_refresh_mode(mode_enum).map_or_else(|e| e.raw_os_error().unwrap_or(-1), |_| 0);
     }
 
     #[no_mangle]

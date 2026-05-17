@@ -22,6 +22,7 @@ pub mod constants {
     pub const MESSAGE_INPUT: u8 = 4;
     pub const MESSAGE_UPDATE: u8 = 1;
     pub const MESSAGE_CUSTOM_INITIALIZE: u8 = 2;
+    pub const MESSAGE_SET_REFRESH_MODE: u8 = 5;
     pub const UPDATE_ALL: i32 = 0;
     pub const UPDATE_PARTIAL: i32 = 1;
     pub const FBFMT_RM2FB: u8 = 0;
@@ -30,6 +31,8 @@ pub mod constants {
 
     pub type FBKey = u32;
 }
+
+
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct InputMessage {
@@ -78,6 +81,7 @@ union ClientMessageContents {
     init: InitMessageContents,
     update: UpdateRegionMessageContents,
     custom_init: CustomInitMessageContents,
+    refresh_mode: i32
 }
 
 #[repr(C)]
@@ -102,6 +106,16 @@ pub struct ClientConnection<'a> {
     fd: RawFd,
     pub shm: &'a mut [u8],
 }
+#[repr(u32)]
+#[derive(Clone, Copy)]
+pub enum RefreshMode {
+    UltraFast=0,
+    Fast=1,
+    Animate=2,
+    Content=3,
+    UI=4
+}
+
 
 #[derive(Debug, Clone)]
 struct InvalidMessage;
@@ -304,6 +318,17 @@ impl<'a> ClientConnection<'a> {
         }
         return Ok(unsafe{ server_message.contents.input});
 
+    }
+
+    pub fn set_refresh_mode(&self, refresh_mode: RefreshMode) -> io::Result<()> {
+        let message = ClientMessage {
+            msg_type: constants::MESSAGE_SET_REFRESH_MODE,
+            contents: ClientMessageContents {
+                refresh_mode: refresh_mode as i32,
+                },
+        };
+
+        self.send_message(&message)
     }
 }
 
