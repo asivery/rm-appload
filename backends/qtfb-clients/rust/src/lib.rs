@@ -1,5 +1,6 @@
 pub mod user_input;
 
+use std::cmp::PartialEq;
 use anyhow::{Error, Result};
 use libc::{
     c_void, mmap, munmap, sockaddr_un, socket, AF_UNIX, MAP_FAILED, MAP_SHARED, PROT_READ,
@@ -104,10 +105,11 @@ struct ServerMessage {
 
 pub struct ClientConnection<'a> {
     fd: RawFd,
+    current_refresh_mode: RefreshMode,
     pub shm: &'a mut [u8],
 }
 #[repr(u32)]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum RefreshMode {
     UltraFast=0,
     Fast=1,
@@ -117,8 +119,11 @@ pub enum RefreshMode {
 }
 
 
+
 #[derive(Debug, Clone)]
 struct InvalidMessage;
+
+
 
 impl<'a> ClientConnection<'a> {
     pub fn new(
@@ -235,7 +240,7 @@ impl<'a> ClientConnection<'a> {
         let shm =
             unsafe { slice::from_raw_parts_mut(shm_ptr as *mut u8, init_message.shm_size) };
 
-        Ok(Self { fd, shm })
+        Ok(Self { fd, current_refresh_mode: RefreshMode::UI, shm })
     }
 
     pub fn send_complete_update(&self) -> io::Result<()> {
@@ -320,7 +325,8 @@ impl<'a> ClientConnection<'a> {
 
     }
 
-    pub fn set_refresh_mode(&self, refresh_mode: RefreshMode) -> io::Result<()> {
+    pub fn set_refresh_mode(&mut self, refresh_mode: RefreshMode) -> io::Result<()> {
+        if (self.current_refresh_mode == refresh_mode) {return Ok(())}
         let message = ClientMessage {
             msg_type: constants::MESSAGE_SET_REFRESH_MODE,
             contents: ClientMessageContents {
@@ -328,7 +334,13 @@ impl<'a> ClientConnection<'a> {
                 },
         };
 
-        self.send_message(&message)
+        match self.send_message(&message) {
+            Ok(_) => {
+                self.current_refresh_mode = refresh_mode;
+                Ok(())
+            },
+            Err(e) => Err(e),
+        }
     }
 }
 

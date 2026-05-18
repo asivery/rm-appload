@@ -85,7 +85,7 @@ mod capi {
             4 => RefreshMode::UI,
             _ => return -1,
         };
-        return connection.as_ref().unwrap().set_refresh_mode(mode_enum).map_or_else(|e| e.raw_os_error().unwrap_or(-1), |_| 0);
+        return connection.as_mut().unwrap().set_refresh_mode(mode_enum).map_or_else(|e| e.raw_os_error().unwrap_or(-1), |_| 0);
     }
 
     #[no_mangle]
