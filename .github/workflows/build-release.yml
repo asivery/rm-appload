@@ -23,7 +23,7 @@ jobs:
       XOVI_REPO: ${{github.workspace}}/xovi-repo
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: true
 
@@ -62,7 +62,7 @@ jobs:
           tar -czf ../appload-${{ matrix.release_arch }}.tar.gz *
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: appload-${{ matrix.release_arch }}
           path: appload-${{ matrix.release_arch }}.tar.gz
@@ -77,7 +77,7 @@ jobs:
 
     steps:
       - name: Download build artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: ./
 
