@@ -16,7 +16,6 @@
 #include "connection.h"
 #include "fileident.h"
 
-#define FAKE_MODEL "reMarkable 1.0"
 #define FILE_MODEL "/sys/devices/soc0/machine"
 
 #define RM1_TOUCHSCREEN "/dev/input/event2,/dev/input/touchscreen0"
@@ -37,7 +36,7 @@
 #define DEV_TYPE_RMPP 2
 #define DEV_TYPE_RMPPM 3
 
-bool shimModel;
+int shimModelType;
 bool shimInput;
 bool shimFramebuffer;
 int shimInputType = SHIM_INPUT_RM1;
@@ -99,8 +98,32 @@ void __attribute__((constructor)) __construct () {
         pidEventQueue = new PIDEventQueue;
         pidEventQueue->next = previous;
     });
+    const char *temp;
 
-    shimModel = readEnvvarBoolean("QTFB_SHIM_MODEL", true);
+    temp = getenv("QTFB_SHIM_MODEL");
+    shimModelType = -1;
+    if(temp != NULL) {
+        if(
+            (strcmp(temp, "1") == 0) ||
+            (strcasecmp(temp, "true") == 0) ||
+            (strcasecmp(temp, "yes") == 0) ||
+            (strcasecmp(temp, "RM1") == 0)
+        ) {
+            shimModelType = DEV_TYPE_RM1;
+            shimInputType = SHIM_INPUT_RM1;
+        } else if(strcasecmp(temp, "RM2") == 0) {
+            shimModelType = DEV_TYPE_RM2;
+            shimInputType = SHIM_INPUT_RM2;
+        } else if(strcasecmp(temp, "RMPP") == 0) {
+            shimModelType = DEV_TYPE_RMPP;
+            shimInputType = SHIM_INPUT_RMPP;
+        } else if(strcasecmp(temp, "RMPPM") == 0) {
+            shimModelType = DEV_TYPE_RMPPM;
+            shimInputType = SHIM_INPUT_RMPPM;
+        } else {
+            CERR << "Invalid model shim type " << temp << std::endl;
+        }
+    }
     shimInput = readEnvvarBoolean("QTFB_SHIM_INPUT", true);
     shimFramebuffer = readEnvvarBoolean("QTFB_SHIM_FB", true);
     respectAppRefreshMode = readEnvvarBoolean("QTFB_SHIM_RESPECT_APP_REFRESH_MODES", true);
@@ -221,7 +244,6 @@ void __attribute__((constructor)) __construct () {
             break;
     }
 
-    const char *temp;
     fileident_t ti;
     if((temp = getenv("QTFB_SHIM_INPUT_PATH_DIGITIZER")) == NULL) {
         temp = pathDigitizer;
@@ -290,25 +312,42 @@ void __attribute__((constructor)) __construct () {
 int spoofModelFD() {
     CERR << "Connected!" << std::endl;
     int modelSpoofFD = memfd_create("Spoof Model Number", 0);
-    const char fakeModel[] = FAKE_MODEL;
+    const char *fakeModel;
+    switch(shimModelType) {
+        default:
+        case DEV_TYPE_RM1: 
+            fakeModel = "reMarkable 1.0\n";
+            break;
+        case DEV_TYPE_RM2:
+            fakeModel = "reMarkable 2.0\n";
+            break;
+        case DEV_TYPE_RMPP:
+            fakeModel = "reMarkable Ferrari\n";
+            break;
+        case DEV_TYPE_RMPPM:
+            fakeModel = "reMarkable Chiappa\n";
+            break;
+    }
+
+    int length = strlen(fakeModel);
 
     if(modelSpoofFD == -1) {
         CERR << "Failed to create memfd for model spoofing" << std::endl;
     }
 
-    if(ftruncate(modelSpoofFD, sizeof(fakeModel) - 1) == -1) {
+    if(ftruncate(modelSpoofFD, length) == -1) {
         CERR << "Failed to truncate memfd for model spoofing: " << errno << std::endl;
     }
 
-    write(modelSpoofFD, fakeModel, sizeof(fakeModel) - 1);
+    write(modelSpoofFD, fakeModel, length);
     lseek(modelSpoofFD, 0, 0);
     return modelSpoofFD;
 }
 
 inline int handleOpen(const char *fileName, fileident_t identity, int flags, mode_t mode) {
     CERR << "Open() " << fileName << ", " << std::hex << identity << std::dec << std::endl;
-    if(shimModel)
-        if(strcmp(fileName, FILE_MODEL) == 0 && shimModel) {
+    if(shimModelType != -1)
+        if(strcmp(fileName, FILE_MODEL) == 0) {
             return spoofModelFD();
         }
 

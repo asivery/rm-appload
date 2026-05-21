@@ -9,7 +9,7 @@ Inspired by [ddvk's awesome remarkable2-framebuffer](https://github.com/ddvk/rem
 
 ## Environment variables used by the shim:
 
-- QTFB_SHIM_MODEL: Whether or not the shim should make the application think it's running on a reMarkable 1 (Values: 0, 1. Default: 1)
+- QTFB_SHIM_MODEL: Whether or not the shim should make the application think it's running on a particular reMarkable tablet (Values: 0, 1 (RM1), RM2, RMPP, RMPPM. Default: 1) - 0 and 1 supported so as to maintain compatibility. Also changes QTFB_SHIM_INPUT_MODE's default.
 - QTFB_SHIM_INPUT: Whether or not the shim should intercept the input devices (Values: 0, 1. Default: 1)
 - QTFB_SHIM_FB: Whether or not the shim should create a virtual framebuffer (Values: 0, 1. Default: 1)
 - QTFB_SHIM_MODE: The framebuffer mode the shim needs to emulate
@@ -28,7 +28,7 @@ Inspired by [ddvk's awesome remarkable2-framebuffer](https://github.com/ddvk/rem
     - N_RGB565: rgb565, resolution of current device (if possible)
 
     Default: RM2FB
-- QTFB_SHIM_INPUT_MODE: The device the shim needs to emulate when translating inputs (Values: RM1, RM2, RMPP, RMPPM, NATIVE. Default: RM1)
+- QTFB_SHIM_INPUT_MODE: The device the shim needs to emulate when translating inputs (Values: RM1, RM2, RMPP, RMPPM, NATIVE. Default: QTFB_SHIM_MODEL's value)
 - QTFB_SHIM_INPUT_PATH_DIGITIZER / QTFB_SHIM_INPUT_PATH_TOUCHSCREEN / QTFB_SHIM_INPUT_PATH_BUTTONS: The device paths that should be treated as the digitizer / touch screen / buttons when running the app (Default: the device specified by QTFB_SHIM_INPUT_MODE's input devices)
 - QTFB_SHIM_INPUT_PATH_NULL: The device paths that should be blocking, but never yield any data (Default: depends on QTFB_SHIM_INPUT_MODE)
 - QTFB_SHIM_INITIAL_DISPLAY_MODE: The initial refresh mode to set the application to
