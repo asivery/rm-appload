@@ -1,0 +1,5 @@
+language = "C"
+
+# An optional name to use as an include guard
+# default: doesn't emit an include guard
+include_guard = "appload_bindings"

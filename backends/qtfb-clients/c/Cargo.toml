@@ -1,0 +1,10 @@
+[package]
+name = "qtfb-client-c"
+version = "0.1.0"
+edition = "2021"
+[features]
+capi = []
+
+[dependencies]
+qtfb-client = { path = "../rust" }
+libc = "0.2.186"
