@@ -88,5 +88,5 @@ jobs:
           gh release create "${{ github.ref_name }}" \
             --repo "${{ github.repository }}" \
             --title "${{ github.ref_name }}" \
-            appload-aarch64/appload.tar.gz#appload-aarch64.tar.gz \
-            appload-arm32/appload.tar.gz#appload-arm32.tar.gz
+            appload-aarch64.tar.gz#appload-aarch64/appload.tar.gz \
+            appload-arm32.tar.gz#appload-arm32/appload.tar.gz
