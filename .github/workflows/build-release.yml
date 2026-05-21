@@ -59,13 +59,13 @@ jobs:
           cp shim/build/qtfb-shim.so shim/build/qtfb-shim-32bit.so result/shims/
           cd result
 
-          tar -czf ../appload.tar.gz *
+          tar -czf ../appload-${{ matrix.release_arch }}.tar.gz *
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: appload-${{ matrix.release_arch }}
-          path: appload.tar.gz
+          path: appload-${{ matrix.release_arch }}.tar.gz
 
   release:
     needs: build
@@ -87,5 +87,5 @@ jobs:
         run: |
           gh release create "${{ github.ref_name }}" \
             -R "${{ github.repository }}" \
-            'appload-aarch64/appload.tar.gz#appload-aarch64.tar.gz' \
-            'appload-arm32/appload.tar.gz#appload-arm32.tar.gz'
+            appload-aarch64/appload-aarch64.tar.gz \
+            appload-arm32/appload-arm32.tar.gz
