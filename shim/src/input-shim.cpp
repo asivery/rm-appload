@@ -322,6 +322,11 @@ int inputShimOpen(fileident_t identity, int flags, mode_t mode) {
     e("vkb", *identVirtualKeyboard);
     e("null", *identNull);
     #undef e
+    if(identNull->find(identity) != identNull->end()) {
+        int fd = createInEventMap(QUEUE_NULL, flags);
+        CERR << "Open null " << fd << std::endl;
+        return fd;
+    }
     if(identDigitizer->find(identity) != identDigitizer->end()) {
         int fd = createInEventMap(QUEUE_PEN, flags);
         CERR << "Open digitizer " << fd << std::endl;
@@ -341,11 +346,6 @@ int inputShimOpen(fileident_t identity, int flags, mode_t mode) {
     if(identVirtualKeyboard->find(identity) != identVirtualKeyboard->end()) {
         int fd = createInEventMap(QUEUE_VIRTUALKEYBOARD, flags);
         CERR << "Open virtual keyboard " << fd << std::endl;
-        return fd;
-    }
-    if(identNull->find(identity) != identNull->end()) {
-        int fd = createInEventMap(QUEUE_NULL, flags);
-        CERR << "Open null " << fd << std::endl;
         return fd;
     }
 
