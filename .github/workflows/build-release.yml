@@ -1,135 +1,89 @@
-name: Build with RMPP Toolchain and Upload Releases
+name: Build and upload releases
 
 on:
   push:
     tags:
-      - '*'
-
-env: 
-  XOVI_REPO: ${{github.workspace}}/xovi-repo
+      - "v*"
 
 jobs:
   build:
     strategy:
       matrix:
-        os: ["eeems/remarkable-toolchain:latest-rmpp", "eeems/remarkable-toolchain:latest-rm1"]
         include:
-          - os: "eeems/remarkable-toolchain:latest-rmpp"
-            arch: aarch64-unknown-linux-gnu
-            artifact_name: appload-aarch64
-          - os: "eeems/remarkable-toolchain:latest-rm1"
-            arch: armv7-unknown-linux-gnueabihf
-            artifact_name: appload-arm32
-    runs-on: ubuntu-latest
+          - image: "eeems/remarkable-toolchain:latest-rmpp"
+            release_arch: aarch64
+          - image: "eeems/remarkable-toolchain:latest-rm1"
+            release_arch: arm32
 
+    runs-on: ubuntu-latest
     container:
-        image: ${{ matrix.os }}
+      image: ${{ matrix.image }}
+
+    env:
+      XOVI_REPO: ${{github.workspace}}/xovi-repo
 
     steps:
-        - name: Checkout Code
-          uses: actions/checkout@v3
-          with:
-            submodules: true
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
 
-        - name: Checkout XOVI repo
-          run: git clone https://github.com/asivery/xovi $XOVI_REPO
+      - run: git clone https://github.com/asivery/xovi.git "$XOVI_REPO"
 
-        # Most of these dependencies are probably overkill.
-        # https://askubuntu.com/a/1460243
-        # https://forum.qt.io/topic/90472/unknown-module-s-in-qt-quickcontrols2/3
-        # https://stackoverflow.com/a/39397382
-        - name: Install QMake
-          run: >-
-            apt-get update
+      - name: Install RCC
+        run: |
+          apt-get update
+          apt-get install -y qt6-base-dev
+          ln -s /usr/lib/qt6/libexec/rcc /usr/local/bin/rcc
 
-            apt-get install -y
-            qt5-qmake 
-            qtbase5-dev 
-            qtbase5-dev-tools 
-            libqt5svg5-dev 
-            libqt5webenginewidgets5 
-            libqt5webchannel5-dev 
-            qtwebengine5-dev
-            qt6-base-dev
-            libgles2-mesa-dev
-            qtquickcontrols2-5-dev
-            qtdeclarative5-dev
-            qt6-declarative-dev
-            zip
+      - name: Build AppLoad
+        run: |
+          . /opt/codex/*/*/environment-setup-*
 
-            qtchooser -install qt6 $(which qmake6)
+          ./make.sh
+        working-directory: ./xovi
 
-            export QT_SELECT=qt6
+      - name: Build shims
+        run: |
+          . /opt/codex/*/*/environment-setup-*
 
-        # Source the rm toolchain ". /opt/codex/*/*/environment-setup-*"
-        # Then run, ./make.sh from the appload install script
-        - name: Build Application
-          run: |
-            . /opt/codex/*/*/environment-setup-*
-            chmod a+x ./make.sh
-            ./make.sh
-          working-directory: ./xovi
+          mkdir build
+          cd build
+          cmake ..
+          make
+        working-directory: ./shim
 
-        - name: Build Shim
-          run: |
-            . /opt/codex/*/*/environment-setup-*
-            mkdir build
-            cd build
-            cmake ..
-            make
-          working-directory: ./shim
+      - name: Create build artifact
+        run: |
+          mkdir -p result/shims
+          cp xovi/appload.so result/
+          cp shim/build/qtfb-shim.so shim/build/qtfb-shim-32bit.so result/shims/
+          cd result
 
-        # Copy ~/appload.so to an empty folder to make publishing the zip easier
-        - name: Copy artifacts
-          run: |
-            mkdir -p ./result/shims
-            cp ./xovi/appload.so ./result/
-            cp ./shim/build/qtfb-shim.so ./shim/build/qtfb-shim-32bit.so ./result/shims/
-            cd result
-            zip -r ${{ matrix.artifact_name }}.zip *
+          tar -czf ../appload.tar.gz *
 
-        - name: Upload Build Artifact
-          uses: actions/upload-artifact@v4
-          with:
-            name: ${{ matrix.artifact_name }}.zip
-            path: ./result
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: appload-${{ matrix.release_arch }}
+          path: appload.tar.gz
 
   release:
-    runs-on: ubuntu-latest
     needs: build
+
+    runs-on: ubuntu-latest
+
     steps:
-        - name: Download Build Artifacts
-          uses: actions/download-artifact@v4
-          with:
-            path: ./
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./
 
-        - name: Create Release
-          uses: actions/create-release@v1
-          id: create_release_step
-          env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          with:
-            draft: false
-            prerelease: false
-            release_name: ${{ github.event.release.tag_name }}
-            tag_name: ${{ github.ref }}
-
-        - name: Upload Release Assets
-          uses: actions/upload-release-asset@v1
-          env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          with:
-            upload_url: ${{ steps.create_release_step.outputs.upload_url }}
-            asset_path: appload-aarch64.zip/appload-aarch64.zip
-            asset_name: appload-aarch64.zip
-            asset_content_type: application/octet-stream
-
-        - name: Upload Release Assets (ARM32)
-          uses: actions/upload-release-asset@v1
-          env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          with:
-            upload_url: ${{ steps.create_release_step.outputs.upload_url }}
-            asset_path: appload-arm32.zip/appload-arm32.zip
-            asset_name: appload-arm32.zip
-            asset_content_type: application/octet-stream
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --repo "${{ github.repository }}" \
+            --title "${{ github.ref_name }}" \
+            appload-aarch64/appload.tar.gz#appload-aarch64.tar.gz \
+            appload-arm32/appload.tar.gz#appload-arm32.tar.gz
