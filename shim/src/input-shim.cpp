@@ -216,6 +216,7 @@ static void pollInputUpdates() {
                     state_a = 1;
                     pushToAll(QUEUE_TOUCH, evt(EV_ABS, ABS_MT_SLOT, 1));
                     pushToAll(QUEUE_TOUCH, evt(EV_ABS, ABS_MT_TRACKING_ID, 50));
+                    pushToAll(QUEUE_TOUCH, evt(EV_ABS, ABS_MT_PRESSURE, 100));
                     goto sendpos;
                 case INPUT_TOUCH_RELEASE:
                     state_a = 0;
@@ -476,6 +477,7 @@ int inputShimIoctl(int fd, unsigned long request, char *ptr, int (*realIoctl)(in
             unsigned long *bits = (unsigned long*) ptr;
             SETBIT(EV_ABS, bits);
             SETBIT(EV_REL, bits);
+            SETBIT(EV_KEY, bits);
         }
 
         if (cmdDir == _IOC_READ && cmdType == 'E' && cmdNr == (0x20 + EV_ABS)) {
