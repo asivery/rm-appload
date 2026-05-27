@@ -21,6 +21,7 @@ class FBController : public QQuickPaintedItem
     Q_PROPERTY(int framebufferID READ framebufferID WRITE setFramebufferID)
     Q_PROPERTY(bool allowScaling READ allowScaling WRITE setAllowScaling)
     Q_PROPERTY(int refreshMode READ refreshMode NOTIFY refreshModeChanged)
+    Q_PROPERTY(QSize framebufferSize READ framebufferSize NOTIFY framebufferSizeChanged)
     Q_OBJECT
 public:
     explicit FBController(QQuickItem *parent = nullptr) : QQuickPaintedItem(parent) { setAcceptTouchEvents(true); setAcceptedMouseButtons((Qt::MouseButtons) 0xFFFFFFFF); setFocusPolicy(Qt::StrongFocus); }
@@ -32,6 +33,7 @@ public:
     void setAllowScaling(bool a);
     bool allowScaling() const;
     int refreshMode() const;
+    QSize framebufferSize() const;
     void setRefreshMode(int refreshMode);
 
     bool active() const;
@@ -63,6 +65,7 @@ signals:
     void dragDown();
     void requestFullRefresh();
     void refreshModeChanged();
+    void framebufferSizeChanged();
 
 private:
     int _framebufferID = -1;

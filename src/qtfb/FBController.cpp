@@ -22,6 +22,7 @@ bool FBController::active() const {
 void FBController::setActive(bool active){
     _active = active;
     emit activeChanged();
+    emit framebufferSizeChanged();
     markedUpdate();
 }
 
@@ -252,4 +253,11 @@ void FBController::setRefreshMode(int rm) {
         _refreshMode = rm;
         emit refreshModeChanged();
     }
+}
+
+QSize FBController::framebufferSize() const {
+    if(image == nullptr) {
+        return QSize();
+    }
+    return image->size();
 }
