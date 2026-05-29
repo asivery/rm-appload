@@ -390,6 +390,7 @@ FocusScope {
 
             visible: qtfbKey != -1
             allowScaling: true
+            fillMode: FBController.PreserveAspectFit
             framebufferID: qtfbKey
             focus: qtfbKey != -1
 

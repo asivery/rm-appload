@@ -36,10 +36,10 @@ void FBController::paint(QPainter *painter) {
     // Do we have an SHM associated?
     if(this->image && this->_active) {
         // Cool. Paint it.
-        if(_allowScaling) {
-            painter->drawImage(QRect(0, 0, width(), height()), *image, image->rect());
+        if(_allowScaling && _fillMode != Pad) {
+            painter->drawImage(this->convertQTFBRectToScreen(QRect(image->rect())), *image, image->rect());
         } else {
-            painter->drawImage(0, 0, *image);
+            painter->drawImage((width() - image->width()) / 2, (height() - image->height()) / 2, *image);
         }
     } else {
         /*
@@ -73,13 +73,16 @@ void FBController::associateSHM(QImage *image) {
 
 void FBController::markedUpdate(const QRect &rect) {
     isMidPaint = true;
-    if(_allowScaling && image) {
-        update(QRect(
-           (rect.x() / image->width()) * this->width(),
-           (rect.y() / image->height()) * this->height(),
-           (rect.width() / image->width()) * this->width(),
-           (rect.height() / image->height()) * this->height()
-        ));
+
+    if(!rect.isValid()) {
+        // invalid rect means complete update
+        update(rect);
+        return;
+    }
+
+    if(image) {
+        auto updateRect = convertQTFBRectToScreen(rect).adjusted(0, 0, 1, 1);
+        update(updateRect);
     } else {
         update(rect);
     }
@@ -95,6 +98,7 @@ bool FBController::allowScaling() const {
 
 
 QPoint FBController::convertPointToQTFBPixels(const QPointF &input) {
+    // FIXME: do correct translation
     if(_allowScaling && image) {
         return QPoint(
             (input.x() * image->width()) / this->width(),
@@ -102,6 +106,48 @@ QPoint FBController::convertPointToQTFBPixels(const QPointF &input) {
         );
     } else {
         return QPoint(input.x(), input.y());
+    }
+}
+
+QRect FBController::convertQTFBRectToScreen(const QRect &input) {
+    if(_allowScaling && _fillMode != Pad) {
+        if(_fillMode == Stretch) {
+            return QRect(
+                (input.left() * width()) / image->width(),
+                (input.top() * height()) / image->height(),
+                (input.width() * width()) / image->width(),
+                (input.height() * height()) / image->height()
+            );
+        }
+
+        QSize fbSize = this->framebufferSize();
+        float fbAspectRatio = (float)fbSize.width() / fbSize.height();
+        bool  widthOrHeight = fbAspectRatio > (float)width() / height();
+
+        if(   (_fillMode == PreserveAspectFit  &&  widthOrHeight)
+           || (_fillMode == PreserveAspectCrop && !widthOrHeight)) {
+            // scale to fill width, calculate height
+            float calculatedHeight = width() / fbAspectRatio;
+            int fbWidth = image->width();
+            return QRect(
+                (input.left()   * width()) / fbWidth,
+                (input.top()    * width()) / fbWidth + (int)(0.5 * (height() - calculatedHeight)),
+                (input.width()  * width() + fbWidth - 1) / fbWidth, // round width up
+                (input.height() * width() + fbWidth - 1) / fbWidth  // round height up
+            );
+        } else {
+            // scale to fill height, calculate width
+            float calculatedWidth = height() * fbAspectRatio;
+            int fbHeight = image->height();
+            return QRect(
+                (input.left()   * height()) / image->height() + (int)(0.5 * (width() - calculatedWidth)),
+                (input.top()    * height()) / image->height(),
+                (input.width()  * height() + fbHeight - 1) / fbHeight, // round width up
+                (input.height() * height() + fbHeight - 1) / fbHeight  // round height up
+            );
+        }
+    } else {
+        return input.translated((width() - image->width()) / 2, (height() - image->height()) / 2);
     }
 }
 

@@ -22,10 +22,20 @@ class FBController : public QQuickPaintedItem
     Q_PROPERTY(bool allowScaling READ allowScaling WRITE setAllowScaling)
     Q_PROPERTY(int refreshMode READ refreshMode NOTIFY refreshModeChanged)
     Q_PROPERTY(QSize framebufferSize READ framebufferSize NOTIFY framebufferSizeChanged)
+    Q_PROPERTY(FillMode fillMode MEMBER _fillMode)
     Q_OBJECT
 public:
     explicit FBController(QQuickItem *parent = nullptr) : QQuickPaintedItem(parent) { setAcceptTouchEvents(true); setAcceptedMouseButtons((Qt::MouseButtons) 0xFFFFFFFF); setFocusPolicy(Qt::StrongFocus); }
     virtual ~FBController();
+
+    enum FillMode
+    {
+        Stretch,
+        PreserveAspectFit,
+        PreserveAspectCrop,
+        Pad
+    };
+    Q_ENUMS(FillMode)
 
     void setFramebufferID(int fbID);
     int framebufferID() const;
@@ -45,6 +55,7 @@ public:
     void associateSHM(QImage *image);
 
     QPoint convertPointToQTFBPixels(const QPointF &input);
+    QRect convertQTFBRectToScreen(const QRect &input);
 
     virtual void mousePressEvent(QMouseEvent *me) override;
     virtual void mouseMoveEvent(QMouseEvent *me) override;
@@ -72,6 +83,7 @@ private:
     int _refreshMode = DEFAULT_WAVEFORM_MODE;
     bool _active = false;
     bool _allowScaling = false;
+    FillMode _fillMode = Stretch;
 
     bool checkingGestureDragDown = false;
     bool refreshedScreenAlready = false;
