@@ -98,12 +98,40 @@ bool FBController::allowScaling() const {
 
 
 QPoint FBController::convertPointToQTFBPixels(const QPointF &input) {
-    // FIXME: do correct translation
     if(_allowScaling && image) {
-        return QPoint(
-            (input.x() * image->width()) / this->width(),
-            (input.y() * image->height()) / this->height() 
-        );
+        int fbWidth = image->width();
+        int fbHeight = image->height();
+
+        if(_fillMode == Stretch) {
+            return QPoint(
+                (input.x() * fbWidth ) / this->width(),
+                (input.y() * fbHeight) / this->height()
+            );
+        }
+        else if(_fillMode == Pad) {
+            return QPoint(
+                input.x() - (width()  - fbWidth ) / 2,
+                input.y() - (height() - fbHeight) / 2
+            );
+        }
+
+        float fbAspectRatio = (float)fbWidth / fbHeight;
+        bool  widthOrHeight = fbAspectRatio > (float)width() / height();
+
+        if(   (_fillMode == PreserveAspectFit  &&  widthOrHeight)
+           || (_fillMode == PreserveAspectCrop && !widthOrHeight)) {
+            // scale to fill width, calculate height
+            float calculatedHeight = width() / fbAspectRatio;
+            return QPoint(
+                (input.x() * fbWidth) / width(),
+                ((input.y() - 0.5 * (height() - calculatedHeight)) * fbWidth) / width());
+        } else {
+            // scale to fill height, calculate width
+            float calculatedWidth = height() * fbAspectRatio;
+            return QPoint(
+                ((input.x() - 0.5 * (width() - calculatedWidth)) * fbHeight) / height(),
+                (input.y() * fbHeight) / height());
+        }
     } else {
         return QPoint(input.x(), input.y());
     }
