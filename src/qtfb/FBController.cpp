@@ -111,6 +111,9 @@ QPoint FBController::convertPointToQTFBPixels(const QPointF &input) {
 
 QRect FBController::convertQTFBRectToScreen(const QRect &input) {
     if(_allowScaling && _fillMode != Pad) {
+        int fbWidth = image->width();
+        int fbHeight = image->height();
+
         if(_fillMode == Stretch) {
             return QRect(
                 (input.left() * width()) / image->width(),
@@ -120,15 +123,13 @@ QRect FBController::convertQTFBRectToScreen(const QRect &input) {
             );
         }
 
-        QSize fbSize = this->framebufferSize();
-        float fbAspectRatio = (float)fbSize.width() / fbSize.height();
+        float fbAspectRatio = (float)fbWidth / fbHeight;
         bool  widthOrHeight = fbAspectRatio > (float)width() / height();
 
         if(   (_fillMode == PreserveAspectFit  &&  widthOrHeight)
            || (_fillMode == PreserveAspectCrop && !widthOrHeight)) {
             // scale to fill width, calculate height
             float calculatedHeight = width() / fbAspectRatio;
-            int fbWidth = image->width();
             return QRect(
                 (input.left()   * width()) / fbWidth,
                 (input.top()    * width()) / fbWidth + (int)(0.5 * (height() - calculatedHeight)),
@@ -138,10 +139,9 @@ QRect FBController::convertQTFBRectToScreen(const QRect &input) {
         } else {
             // scale to fill height, calculate width
             float calculatedWidth = height() * fbAspectRatio;
-            int fbHeight = image->height();
             return QRect(
-                (input.left()   * height()) / image->height() + (int)(0.5 * (width() - calculatedWidth)),
-                (input.top()    * height()) / image->height(),
+                (input.left()   * height()) / fbHeight + (int)(0.5 * (width() - calculatedWidth)),
+                (input.top()    * height()) / fbHeight,
                 (input.width()  * height() + fbHeight - 1) / fbHeight, // round width up
                 (input.height() * height() + fbHeight - 1) / fbHeight  // round height up
             );
