@@ -48,7 +48,13 @@ mod capi {
                                                shm_type: u8,
                                                custom_resolution: *const QTFB_CustomResolution,
     ) -> *mut dumbstupidhack::QTFB_ClientConnection<'a> {
-        Box::into_raw(Box::new(dumbstupidhack::QTFB_ClientConnection::new(framebuffer_id, shm_type, custom_resolution.as_ref().and_then(|t| Some((t.width, t.height)))).unwrap()))
+        match dumbstupidhack::QTFB_ClientConnection::new(framebuffer_id, shm_type, custom_resolution.as_ref().and_then(|t| Some((t.width, t.height)))) {
+            Ok(val) => Box::into_raw(Box::new(val)),
+            Err(err) => {
+                eprintln!("Couldnt open connection: {}", err);
+                null::<*mut dumbstupidhack::QTFB_ClientConnection>() as *mut dumbstupidhack::QTFB_ClientConnection
+            }
+        }
     }
     #[no_mangle]
     unsafe extern "C" fn qtfb_send_complete_update(connection: *mut dumbstupidhack::QTFB_ClientConnection) -> c_int {
