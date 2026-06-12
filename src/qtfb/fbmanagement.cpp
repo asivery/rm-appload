@@ -111,7 +111,7 @@ static bool createSHM(qtfb::management::ClientBackend *connection, int shmType, 
     connection->shmKey = rand() & ~0x80000000;
     FORMAT_SHM(shmText, connection->shmKey);
     shm_unlink(shmText);
-    connection->shmFD = shm_open(shmText, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+    connection->shmFD = shm_open(shmText, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
     if(connection->shmFD == -1) {
         CERR << "Failed to shm_open()!" << std::endl;
         return false;
