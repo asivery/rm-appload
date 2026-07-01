@@ -9,6 +9,7 @@
 #include "AppLibrary.h"
 #include "AppLoad.h"
 #include "inkcanvas.h"
+#include "markerinput.h"
 #include "management.h"
 #include "library.h"
 #include "xovi.h"
@@ -28,6 +29,7 @@ extern "C" {
         qmlRegisterType<AppLoadApplication>("net.asivery.AppLoad", 1, 0, "AppLoadApplication");
         qmlRegisterType<FBController>("net.asivery.Framebuffer", 1, 0, "FBController");
         qmlRegisterType<InkCanvas>("net.asivery.Ink", 1, 0, "InkCanvas");
+        qmlRegisterType<MarkerInput>("net.asivery.Marker", 1, 0, "MarkerInput");
         qmlRegisterSingletonType<AppLoadLauncher>("net.asivery.AppLoad", 1, 0, "AppLoadLauncher", &AppLoadLauncher::qmlSingleton);
         qt_resource_rebuilder$qmldiff_add_external_diff(r$apploadDiff, "AppLoad hooks in main UI");
 

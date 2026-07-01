@@ -10,7 +10,7 @@ CONFIG += shared plugin no_plugin_name_prefix
 # drops those unused libs from NEEDED and lets the extension dlopen on-device.
 QMAKE_LFLAGS += -Wl,--as-needed
 
-SOURCES += src/main.cpp xovi.cpp src/management.cpp src/AppLoad.cpp src/AppLoadCoordinator.cpp src/library.cpp src/libraryexternals.cpp src/qtfb/fbmanagement.cpp src/qtfb/FBController.cpp src/keyboard/layout.cpp src/inkcanvas.cpp
+SOURCES += src/main.cpp xovi.cpp src/management.cpp src/AppLoad.cpp src/AppLoadCoordinator.cpp src/library.cpp src/libraryexternals.cpp src/qtfb/fbmanagement.cpp src/qtfb/FBController.cpp src/keyboard/layout.cpp src/inkcanvas.cpp src/markerinput.cpp
 HEADERS += src/AppLoad.h src/AppLoadCoordinator.h src/library.h src/AppLibrary.h \
-            src/qtfb/FBController.h src/qtfb/fbmanagement.h src/keyboard/layout.h src/Launcher.h src/inkcanvas.h
+            src/qtfb/FBController.h src/qtfb/fbmanagement.h src/keyboard/layout.h src/Launcher.h src/inkcanvas.h src/markerinput.h
 
