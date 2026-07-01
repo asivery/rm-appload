@@ -11,7 +11,7 @@ InkCanvas::InkCanvas(QQuickItem *parent)
     setRenderTarget(QQuickPaintedItem::Image);
     setOpaquePainting(false);
     setFillColor(Qt::transparent);
-    setAntialiasing(false);
+    setAntialiasing(m_antialias);
     setMipmap(false);
 }
 
@@ -33,6 +33,17 @@ void InkCanvas::setColor(const QColor &c)
     emit colorChanged();
 }
 
+void InkCanvas::setAntialias(bool on)
+{
+    if (m_antialias == on) {
+        return;
+    }
+    m_antialias = on;
+    setAntialiasing(on);
+    emit antialiasChanged();
+    update();
+}
+
 void InkCanvas::geometryChange(const QRectF &newGeometry, const QRectF &oldGeometry)
 {
     QQuickPaintedItem::geometryChange(newGeometry, oldGeometry);
@@ -41,7 +52,9 @@ void InkCanvas::geometryChange(const QRectF &newGeometry, const QRectF &oldGeome
 
 QRectF InkCanvas::segmentBounds(const Segment &s) const
 {
-    const qreal m = m_penWidth / 2.0 + 1.0;
+    // Half the stroke width, plus a margin that covers the round cap and the
+    // extra fringe pixels antialiasing adds.
+    const qreal m = s.width / 2.0 + (m_antialias ? 2.0 : 1.0);
     const qreal minX = std::min(s.a.x(), s.b.x()) - m;
     const qreal minY = std::min(s.a.y(), s.b.y()) - m;
     const qreal maxX = std::max(s.a.x(), s.b.x()) + m;
@@ -55,7 +68,7 @@ void InkCanvas::moveTo(qreal x, qreal y)
     m_hasLast = true;
 }
 
-void InkCanvas::lineTo(qreal x, qreal y)
+void InkCanvas::lineTo(qreal x, qreal y, qreal width)
 {
     const QPointF p(x, y);
     if (!m_hasLast) {
@@ -64,7 +77,7 @@ void InkCanvas::lineTo(qreal x, qreal y)
         return;
     }
 
-    const Segment seg{m_last, p};
+    const Segment seg{m_last, p, width < 0.0 ? m_penWidth : width};
     m_segments.append(seg);
     m_last = p;
 
@@ -136,17 +149,17 @@ void InkCanvas::paint(QPainter *painter)
     QRectF clip = painter->clipBoundingRect();
     const bool haveClip = clip.isValid() && !clip.isEmpty();
 
-    painter->setRenderHint(QPainter::Antialiasing, false);
+    painter->setRenderHint(QPainter::Antialiasing, m_antialias);
     QPen pen(m_color);
-    pen.setWidthF(m_penWidth);
     pen.setCapStyle(Qt::RoundCap);
     pen.setJoinStyle(Qt::RoundJoin);
-    painter->setPen(pen);
 
     for (const Segment &seg : m_segments) {
         if (haveClip && !segmentBounds(seg).intersects(clip)) {
             continue;
         }
+        pen.setWidthF(seg.width);
+        painter->setPen(pen);
         painter->drawLine(seg.a, seg.b);
     }
 }
