@@ -1,6 +1,7 @@
 #include "FBController.h"
 #include "fbmanagement.h"
 #include "log.h"
+#include <QtMath>
 
 void FBController::setFramebufferID(int fbId){
     if(_framebufferID != fbId){
@@ -73,12 +74,17 @@ void FBController::associateSHM(QImage *image) {
 void FBController::markedUpdate(const QRect &rect) {
     isMidPaint = true;
     if(_allowScaling && image) {
-        update(QRect(
-           (rect.x() / image->width()) * this->width(),
-           (rect.y() / image->height()) * this->height(),
-           (rect.width() / image->width()) * this->width(),
-           (rect.height() / image->height()) * this->height()
-        ));
+        // Multiply BEFORE dividing: integer division first truncated every
+        // partial rect to zero, and a null QRect tells Qt to repaint the
+        // WHOLE item (rm-appload issue #33). Same operand order as
+        // convertPointToQTFBPixels below. The far edge rounds UP so scaling
+        // never clips a stroke's border. A null rect stays null, so
+        // UPDATE_ALL keeps meaning "repaint everything".
+        const int x0 = qFloor(rect.x() * this->width() / image->width());
+        const int y0 = qFloor(rect.y() * this->height() / image->height());
+        const int x1 = qCeil((rect.x() + rect.width()) * this->width() / image->width());
+        const int y1 = qCeil((rect.y() + rect.height()) * this->height() / image->height());
+        update(QRect(x0, y0, x1 - x0, y1 - y0));
     } else {
         update(rect);
     }
