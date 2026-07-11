@@ -34,11 +34,27 @@ void FBController::paint(QPainter *painter) {
     QDEBUG << "FB Repaint triggered for " << _framebufferID << ". Status: " << _active;
     // Do we have an SHM associated?
     if(this->image && this->_active) {
-        // Cool. Paint it.
+        // Cool. Paint it. Convert/blit only the dirty region: the scene
+        // graph clips the painter to the accumulated dirty rect, and a
+        // full-framebuffer conversion per repaint is what makes
+        // high-frequency partial updates expensive. When no clip is set
+        // (whole-item repaint), fall back to the full blit.
+        const QRectF clip = painter->clipBoundingRect();
         if(_allowScaling) {
-            painter->drawImage(QRect(0, 0, width(), height()), *image, image->rect());
+            if(!clip.isEmpty() && width() > 0 && height() > 0) {
+                const qreal sx = (qreal) image->width() / width();
+                const qreal sy = (qreal) image->height() / height();
+                const QRectF src(clip.x() * sx, clip.y() * sy, clip.width() * sx, clip.height() * sy);
+                painter->drawImage(clip, *image, src);
+            } else {
+                painter->drawImage(QRect(0, 0, width(), height()), *image, image->rect());
+            }
         } else {
-            painter->drawImage(0, 0, *image);
+            if(!clip.isEmpty()) {
+                painter->drawImage(clip, *image, clip);
+            } else {
+                painter->drawImage(0, 0, *image);
+            }
         }
     } else {
         /*
