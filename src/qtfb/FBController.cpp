@@ -73,13 +73,20 @@ void FBController::associateSHM(QImage *image) {
 
 void FBController::markedUpdate(const QRect &rect) {
     isMidPaint = true;
-    if(_allowScaling && image) {
+    if(rect.isNull()) {
+        // UPDATE_ALL arrives here as a null QRect. Request the full item
+        // EXPLICITLY instead of forwarding the null: QQuickPaintedItem
+        // accumulates its dirty rect, and a later partial update() in the
+        // same frame would union with — and silently narrow — a null
+        // "whole item" request. This guard must run before the scaling
+        // math, which would turn the null into an empty QRect(0,0,0,0).
+        update(QRect(0, 0, qCeil(this->width()), qCeil(this->height())));
+    } else if(_allowScaling && image) {
         // Multiply BEFORE dividing: integer division first truncated every
         // partial rect to zero, and a null QRect tells Qt to repaint the
         // WHOLE item (rm-appload issue #33). Same operand order as
         // convertPointToQTFBPixels below. The far edge rounds UP so scaling
-        // never clips a stroke's border. A null rect stays null, so
-        // UPDATE_ALL keeps meaning "repaint everything".
+        // never clips a stroke's border.
         const int x0 = qFloor(rect.x() * this->width() / image->width());
         const int y0 = qFloor(rect.y() * this->height() / image->height());
         const int x1 = qCeil((rect.x() + rect.width()) * this->width() / image->width());
