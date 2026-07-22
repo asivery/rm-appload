@@ -1,6 +1,7 @@
 #include "FBController.h"
 #include "fbmanagement.h"
 #include "log.h"
+#include <cmath>
 
 void FBController::setFramebufferID(int fbId){
     if(_framebufferID != fbId){
@@ -72,12 +73,16 @@ void FBController::associateSHM(QImage *image) {
 
 void FBController::markedUpdate(const QRect &rect) {
     isMidPaint = true;
-    if(_allowScaling && image) {
+    if(_allowScaling && image && image->width() > 0 && image->height() > 0) {
+        // Scale in floating point: integer division truncated every
+        // sub-framebuffer rect to zero, silently dropping partial updates.
+        const qreal sx = this->width() / (qreal) image->width();
+        const qreal sy = this->height() / (qreal) image->height();
         update(QRect(
-           (rect.x() / image->width()) * this->width(),
-           (rect.y() / image->height()) * this->height(),
-           (rect.width() / image->width()) * this->width(),
-           (rect.height() / image->height()) * this->height()
+           (int) std::floor(rect.x() * sx),
+           (int) std::floor(rect.y() * sy),
+           (int) std::ceil(rect.width() * sx) + 1,
+           (int) std::ceil(rect.height() * sy) + 1
         ));
     } else {
         update(rect);
