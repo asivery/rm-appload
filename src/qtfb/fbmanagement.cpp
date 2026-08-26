@@ -159,7 +159,7 @@ static bool createDefaultSHM(qtfb::management::ClientBackend *connection, int sh
         case FBFMT_RMPPURE_RGB888:
         case FBFMT_RMPPURE_RGBA8888:
         case FBFMT_RMPPURE_RGB565:
-            return createSHM(connection, shmType, RMPPURE_WIDTH, RMPPPURE_HEIGHT);
+            return createSHM(connection, shmType, RMPPURE_WIDTH, RMPPURE_HEIGHT);
         default:
             return createSHM(connection, shmType, -1, -1);
     }
