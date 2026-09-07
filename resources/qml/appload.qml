@@ -53,6 +53,7 @@ Rectangle {
 
             win.appName = modelData.name;
             win.supportsScaling = modelData.supportsScaling;
+            win.supportsRotation = modelData.supportsRotation;
             win.virtualKeyboardLayout = modelData.virtualKeyboardLayout;
             win.disablesWindowedMode = modelData.disablesWindowedMode;
 

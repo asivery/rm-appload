@@ -26,6 +26,7 @@ class AppLoadApplication : public QObject {
     Q_PROPERTY(QString name READ name CONSTANT)
     Q_PROPERTY(QString icon READ icon CONSTANT)
     Q_PROPERTY(bool supportsScaling READ supportsScaling CONSTANT)
+    Q_PROPERTY(bool supportsRotation READ supportsRotation CONSTANT)
     Q_PROPERTY(bool canHaveMultipleFrontends READ canHaveMultipleFrontends CONSTANT)
     Q_PROPERTY(int externalType READ externalType CONSTANT) // 0 - not external, 1 - external (non-graphics), 2 - external (qtfb)
     Q_PROPERTY(float aspectRatio READ aspectRatio CONSTANT)
@@ -41,6 +42,7 @@ public:
         const QString &name,
         const QString &icon,
         bool supportsScaling,
+        bool supportsRotation,
         bool canHaveMultipleFrontends,
         int externalType,
         float aspectRatio,
@@ -54,6 +56,7 @@ public:
         _name(name),
         _icon(icon),
         _supportsScaling(supportsScaling),
+        _supportsRotation(supportsRotation),
         _canHaveMultipleFrontends(canHaveMultipleFrontends),
         _externalType(externalType),
         _aspectRatio(aspectRatio),
@@ -69,6 +72,7 @@ public:
         _name(other._name),
         _icon(other._icon),
         _supportsScaling(other._supportsScaling),
+        _supportsRotation(other._supportsRotation),
         _canHaveMultipleFrontends(other._canHaveMultipleFrontends),
         _externalType(other._externalType),
         _aspectRatio(other._aspectRatio),
@@ -83,6 +87,7 @@ public:
     int width() const { return _width; }
     const appload::vk::Layout *virtualKeyboardLayout() const { return _virtualKeyboardLayout; }
     bool supportsScaling() const { return _supportsScaling; }
+    bool supportsRotation() const { return _supportsRotation; }
     bool canHaveMultipleFrontends() const { return _canHaveMultipleFrontends; }
     int externalType() const { return _externalType; }
     bool disablesWindowedMode() const { return _disablesWindowedMode; }
@@ -92,6 +97,7 @@ private:
     QString _name;
     QString _icon;
     bool _supportsScaling;
+    bool _supportsRotation;
     bool _supportsVirtualKeyboard;
     bool _canHaveMultipleFrontends;
     int _externalType;
@@ -160,6 +166,7 @@ public:
                                                         entry.second->getAppName(),
                                                         entry.second->getIconPath(),
                                                         entry.second->supportsScaling(),
+                                                        entry.second->supportsRotation(),
                                                         entry.second->canHaveMultipleFrontends(),
                                                         INTERNAL,
                                                         entry.second->aspectRatio(),
@@ -173,6 +180,7 @@ public:
                                                         entry.second->getAppName(),
                                                         entry.second->getIconPath(),
                                                         entry.second->aspectRatio() == 0, // do not constrain window size if aspectRatio is set to "auto"
+                                                        entry.second->supportsRotation(),
                                                         true,
                                                         entry.second->isQTFB() ? EXTERNAL_QTFB : EXTERNAL_NOGUI,
                                                         entry.second->aspectRatio(),

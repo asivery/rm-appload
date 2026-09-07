@@ -97,6 +97,10 @@ bool appload::library::LoadedApplication::supportsScaling() const {
     return _supportsScaling;
 }
 
+bool appload::library::LoadedApplication::supportsRotation() const {
+    return _supportsRotation;
+}
+
 bool appload::library::LoadedApplication::canHaveMultipleFrontends() const {
     return _canHaveMultipleFrontends;
 }
@@ -148,6 +152,7 @@ void appload::library::LoadedApplication::parseManifest(){
     qmlEntrypoint = jsonObject.value("entry").toString();
     loadsBackend = jsonObject.value("loadsBackend").toBool();
     _supportsScaling = jsonObject.value("supportsScaling").toBool(false);
+    _supportsRotation = jsonObject.value("supportsRotation").toBool(false);
     _canHaveMultipleFrontends = jsonObject.value("canHaveMultipleFrontends").toBool(true);
     auto aspectRatioAndWidth = appload::library::parseAspectRatioAndWidth(jsonObject, filePath);
     std::tie(this->_aspectRatio, this->_width) = aspectRatioAndWidth;

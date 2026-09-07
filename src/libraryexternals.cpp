@@ -52,6 +52,7 @@ void appload::library::ExternalApplication::parseManifest() {
 
     // Optional:
     _isQTFB = jsonObject.value("qtfb").toBool(false);
+    _supportsRotation = jsonObject.value("supportsRotation").toBool(false);
     _disablesWindowedMode = jsonObject.value("disablesWindowedMode").toBool(false);
     bool supportsVirtualKeyboard = jsonObject.value("supportsVirtualKeyboard").toBool(false);
     if(supportsVirtualKeyboard) {
@@ -137,6 +138,10 @@ bool appload::library::ExternalApplication::isQTFB() const {
 
 bool appload::library::ExternalApplication::disablesWindowedMode() const {
     return _disablesWindowedMode;
+}
+
+bool appload::library::ExternalApplication::supportsRotation() const {
+    return _supportsRotation;
 }
 
 const appload::vk::Layout *appload::library::ExternalApplication::getVirtualKeyboardLayout() const {

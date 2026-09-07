@@ -51,6 +51,7 @@ namespace appload::library {
         float aspectRatio() const;
         bool disablesWindowedMode() const;
         bool supportsVirtualKeyboard() const;
+        bool supportsRotation() const;
         const appload::vk::Layout *getVirtualKeyboardLayout() const;
 
         bool valid = false;
@@ -67,6 +68,7 @@ namespace appload::library {
         bool _isQTFB;
         float _aspectRatio;
         bool _disablesWindowedMode;
+        bool _supportsRotation;
         const appload::vk::Layout *_virtualKeyboardLayout;
 
         void parseManifest();
@@ -89,6 +91,7 @@ namespace appload::library {
         bool isBackendRequired() const;
         bool isFrontendRunning() const;
         bool supportsScaling() const;
+        bool supportsRotation() const;
         bool canHaveMultipleFrontends() const;
         bool disablesWindowedMode() const;
         float aspectRatio() const;
@@ -103,6 +106,7 @@ namespace appload::library {
         QString internalIdentifier;
         bool loadsBackend;
         bool _supportsScaling;
+        bool _supportsRotation;
         bool _canHaveMultipleFrontends;
         float _aspectRatio;
         int _width;
