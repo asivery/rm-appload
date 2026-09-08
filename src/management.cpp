@@ -134,7 +134,11 @@ void appload::management::_registerSocket(const QString &applicationID, int sock
 
 static void _listeningThread(char *sockPath, QString appID){
     unlink(sockPath);
+#ifdef Q_OS_DARWIN
+    int sockFD = socket(AF_UNIX, SOCK_STREAM, 0);
+#else
     int sockFD = socket(AF_UNIX, SOCK_SEQPACKET, 0);
+#endif
     if(sockFD == -1){
         CERR << "Cannot create generic socket!" << std::endl;
         return;
@@ -142,6 +146,9 @@ static void _listeningThread(char *sockPath, QString appID){
     struct sockaddr_un unixSock;
     unixSock.sun_family = AF_UNIX;
     strncpy(unixSock.sun_path, sockPath, sizeof(unixSock.sun_path) - 1);
+#ifdef Q_OS_DARWIN
+    unixSock.sun_len = SUN_LEN(&unixSock);
+#endif
     if(bind(sockFD, (struct sockaddr *) &unixSock, sizeof(unixSock)) == -1) {
         CERR << "Cannot bind to socket " << sockPath << std::endl;
         return;

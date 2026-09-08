@@ -1,6 +1,6 @@
 use anyhow::{Error, Result};
 use async_trait::async_trait;
-use libc::{c_void, sockaddr_un, socket, AF_UNIX, SOCK_SEQPACKET};
+use libc::{c_int, c_void, sockaddr_un, socket, AF_UNIX};
 use std::env::args;
 use std::io;
 use std::mem;
@@ -67,18 +67,7 @@ impl <T: AppLoadBackend> Clone for BackendReplier<T> {
 impl <T: AppLoadBackend> AppLoad<T> {
     pub fn new(backend: T) -> Result<Self> {
         let args: Vec<String> = args().collect();
-        let fd = unsafe { socket(AF_UNIX, SOCK_SEQPACKET, 0) };
-        if fd == -1 {
-            return Err(Error::new(io::Error::last_os_error()));
-        }
-
-        let mut addr = sockaddr_un {
-            sun_family: AF_UNIX as u16,
-            sun_path: [0; 108],
-        };
-        let bytes = args[1].as_bytes();
-        addr.sun_path[..bytes.len()].copy_from_slice(unsafe { transmute(bytes) });
-
+        let (fd, addr) = Self::create_socket(&args[1])?;
         let connect_res = unsafe {
             libc::connect(
                 fd,
@@ -92,6 +81,41 @@ impl <T: AppLoadBackend> AppLoad<T> {
         }
 
         Ok(Self { backend: Arc::new(Mutex::new(backend)), fd })
+    }
+
+    #[cfg(target_os = "macos")]
+    fn create_socket(path: &str) -> Result<(c_int, sockaddr_un)> {
+        let fd = unsafe { socket(AF_UNIX, libc::SOCK_STREAM, 0) };
+        if fd == -1 {
+            return Err(Error::new(io::Error::last_os_error()));
+        }
+
+        let bytes = path.as_bytes();
+        let mut addr = sockaddr_un {
+            sun_family: AF_UNIX as u8,
+            sun_len: (mem::offset_of!(sockaddr_un, sun_path) + bytes.len()) as u8,
+            sun_path: [0; 104],
+        };
+        addr.sun_path[..bytes.len()].copy_from_slice(unsafe { transmute(bytes) });
+
+        Ok((fd, addr))
+    }
+
+    #[cfg(target_os = "linux")]
+    fn create_socket(path: &str) -> Result<(c_int, sockaddr_un)> {
+        let fd = unsafe { socket(AF_UNIX, libc::SOCK_SEQPACKET , 0) };
+        if fd == -1 {
+            return Err(Error::new(io::Error::last_os_error()));
+        }
+
+        let mut addr = sockaddr_un {
+            sun_family: AF_UNIX as u16,
+            sun_path: [0; 108],
+        };
+        let bytes = path.as_bytes();
+        addr.sun_path[..bytes.len()].copy_from_slice(unsafe { transmute(bytes) });
+
+        Ok((fd, addr))
     }
 
     pub fn create_replier(&self) -> BackendReplier<T> {
