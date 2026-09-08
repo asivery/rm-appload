@@ -169,6 +169,10 @@ FocusScope {
             if(!supportsScaling) {
                 let scale = width / root.scaledContentWidth
                 height = root.scaledContentHeight * scale
+
+                if(windowRotation == FBController.Deg90L || windowRotation == FBController.Deg90R) {
+                    [height, width] = [width, height];
+                }
             }
 
             root.width = width;
@@ -380,6 +384,7 @@ FocusScope {
     Rectangle {
         id: mainWindowView
         anchors.top: topbar.bottom
+        anchors.right: parent.right
         height: parent.height - topbar.height
         width: parent.width
         clip: true

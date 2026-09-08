@@ -62,12 +62,16 @@ Rectangle {
             win.globalWidth = Qt.binding(function() { return _appLoadView.width; })
             win.globalHeight = Qt.binding(function() { return _appLoadView.height; })
             const deviceAspectRatio = _appLoadView.width < _appLoadView.height ? (_appLoadView.width / _appLoadView.height) : (_appLoadView.height / _appLoadView.width);
-            const deviceWidth = Math.min(_appLoadView.height);
+            const deviceWidth = Math.min(_appLoadView.height, _appLoadView.width);
             const realAspectRatio = modelData.aspectRatio || deviceAspectRatio;
             const width = modelData.width || deviceWidth;
             console.log(`Application starting on device with ${deviceAspectRatio} aspect ratio. Real aspect ratio of the application is going to be ${realAspectRatio}`);
             [win.minWidth, win.minHeight] = [win.implicitWidth, win.implicitHeight] = [minimumResolutionWidth, Math.floor(minimumResolutionWidth / realAspectRatio)];
             [win.scaledContentWidth, win.scaledContentHeight] = [width, Math.floor(width / realAspectRatio)];
+            // The original width / height is bound to scaled globalWidth. This needs to be flipped if the device is on its side:
+            if(_appLoadView.width > _appLoadView.height) {
+                [win.width, win._height] = [win._height, win.width];
+            }
 
             win.qtfbKey = qtfbKey;
             win.closed.connect(() => win.destroy());

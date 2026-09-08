@@ -32,7 +32,6 @@ void FBController::paint(QPainter *painter) {
     // Do we have an SHM associated?
     if(this->image && this->_active) {
         // Cool. Paint it.
-        painter->resetTransform();
         switch(fbRotation) {
             case Deg0: break;
             case Deg90L:
