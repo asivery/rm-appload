@@ -104,6 +104,7 @@ namespace appload::library {
         QString appName, appID, qmlEntrypoint;
         QString frontendRoot;
         QString internalIdentifier;
+        QTranslator *m_appTranslator = nullptr;
         bool loadsBackend;
         bool _supportsScaling;
         bool _supportsRotation;
@@ -112,6 +113,8 @@ namespace appload::library {
         int _width;
         bool frontendLoaded = false;
         void parseManifest();
+        void loadTranslations(const QString &localeStr = QString());
+        void unloadTranslations();
     };
 
     int loadApplications();
