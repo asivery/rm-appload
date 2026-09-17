@@ -74,7 +74,12 @@ Rectangle {
             }
 
             win.qtfbKey = qtfbKey;
-            win.closed.connect(() => win.destroy());
+            win.closed.connect(() => {
+                win.destroy();
+                if(_appLoadView.virtualKeyboardRef.active && _appLoadView.virtualKeyboardRef.config === win.keyboardConfig) {
+                    _appLoadView.virtualKeyboardRef.active = false;
+                }
+            });
         }
 
         if(modelData.externalType == 0 /* INTERNAL */) {
