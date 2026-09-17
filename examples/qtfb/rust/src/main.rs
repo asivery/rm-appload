@@ -10,6 +10,9 @@ fn main() {
     ).unwrap();
     let file_contents = std::fs::read("a.raw").unwrap();
     client.shm[0..file_contents.len()].copy_from_slice(&file_contents);
-    let res = client.send_complete_update().unwrap();
-    std::thread::sleep(std::time::Duration::from_secs(10));
+    let _res = client.send_complete_update().unwrap();
+    loop {
+        let data = client.poll_server_message().unwrap();
+        println!("Received: {data:?}");
+    }
 }

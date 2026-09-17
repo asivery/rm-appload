@@ -42,6 +42,11 @@ FocusScope {
         keyDown: code => windowCanvas.virtualKeyboardKeyDown(code),
     })
 
+    // Rotation handling:
+    property bool supportsRotation: false
+    property var windowRotation: FBController.Deg0
+    property var globalRotation: FBController.Deg0
+
     // External I/O from this component:
     signal closed
     function loadApplication(appId) {
@@ -162,10 +167,12 @@ FocusScope {
             startY = mouse.y
 
             if(!supportsScaling) {
-                let scale = Math.min(height / root.globalHeight, width / root.globalWidth);
+                let scale = width / root.scaledContentWidth
+                height = root.scaledContentHeight * scale
 
-                width = root.globalWidth * scale
-                height = root.globalHeight * scale + topbar.height
+                if(windowRotation == FBController.Deg90L || windowRotation == FBController.Deg90R) {
+                    [height, width] = [width, height];
+                }
             }
 
             root.width = width;
@@ -331,6 +338,42 @@ FocusScope {
         }
 
         Rectangle {
+            id: rotateButton
+            width: parent.height
+            height: parent.height
+            anchors.left: virtualKeyboardButton.right
+            border.width: 2
+            border.color: "black"
+            color: parent.color
+            visible: !fullscreen && supportsRotation
+
+            Image {
+                source: "qrc:/appload/icons/rotate"
+                sourceSize.width: 120
+                sourceSize.height: 120
+                anchors.fill: parent
+                anchors.margins: 10
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: () => {
+                    [root._height, root.width] = [root.width, root._height];
+                    switch(windowRotation) {
+                        case FBController.Deg0: windowRotation = FBController.Deg90R;
+                        break;
+                        case FBController.Deg90R: windowRotation = FBController.Deg180;
+                        break;
+                        case FBController.Deg180: windowRotation = FBController.Deg90L;
+                        break;
+                        case FBController.Deg90L: windowRotation = FBController.Deg0;
+                        break;
+                    }
+                }
+            }
+        }
+
+        Rectangle {
             width: parent.width
             height: 2
             anchors.bottom: parent.bottom
@@ -341,6 +384,7 @@ FocusScope {
     Rectangle {
         id: mainWindowView
         anchors.top: topbar.bottom
+        anchors.right: parent.right
         height: parent.height - topbar.height
         width: parent.width
         clip: true
@@ -353,45 +397,16 @@ FocusScope {
 
         FBController {
             id: windowCanvas
-            property var deviceAspectRatio: root.globalWidth / root.globalHeight
-            property var contentAspectRatio: root.scaledContentWidth / root.scaledContentHeight
-            states: [
-                State {
-                    name: "a"
-                    when: windowCanvas.deviceAspectRatio == windowCanvas.contentAspectRatio
-                    PropertyChanges {
-                        target: windowCanvas
-                        width: parent.width
-                        height: parent.height
-                    }
-                },
-                State {
-                    name: "b"
-                    when: windowCanvas.deviceAspectRatio > windowCanvas.contentAspectRatio
-
-                    PropertyChanges {
-                        target: windowCanvas
-                        height: parent.height
-                        width: windowCanvas.contentAspectRatio * parent.height
-                    }
-                },
-                State {
-                    name: "c"
-                    when: windowCanvas.contentAspectRatio > windowCanvas.deviceAspectRatio
-
-                    PropertyChanges {
-                        target: windowCanvas
-                        width: parent.width
-                        height: parent.width / windowCanvas.contentAspectRatio
-                    }
-                }
-            ]
-            anchors.centerIn: parent
+            anchors.fill: parent
 
             visible: qtfbKey != -1
             allowScaling: true
+            fillMode: FBController.PreserveAspectFit
             framebufferID: qtfbKey
             focus: qtfbKey != -1
+
+            fbRotation: !supportsRotation ? FBController.Deg0 : fullscreen ? root.globalRotation : root.windowRotation
+            sendFlippedRotationToClient: true
 
             onActiveChanged: () => {
                 if(!windowCanvas.active) {
@@ -411,11 +426,11 @@ FocusScope {
             onUnloading: () => {
                 let unloadingFunction;
                 if(supportsScaling) {
-                    unloadingFunction = loader.item.unloading;
+                    unloadingFunction = loader.item?.unloading;
                 } else {
                     unloadingFunction = loaderScaled.item?.unloading;
                 }
-                if(unloadingFunction) unloadingFunction();
+                unloadingFunction?.();
                 root.virtualKeyboardRef.active = false;
                 root.closed();
             }

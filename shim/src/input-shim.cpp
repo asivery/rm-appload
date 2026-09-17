@@ -52,6 +52,12 @@
 #define RMPPM_MAX_DIGI_X 6760
 #define RMPPM_MAX_DIGI_Y 11960
 
+#define RMPPURE_MAX_TOUCH_X 1776
+#define RMPPURE_MAX_TOUCH_Y 2400
+#define RMPPURE_MAX_PRESSURE 4096
+#define RMPPURE_MAX_DIGI_X 9620
+#define RMPPURE_MAX_DIGI_Y 13000
+
 extern qtfb::ClientConnection *clientConnection;
 extern int shimInputType;
 extern std::set<fileident_t> *identDigitizer, *identTouchScreen, *identButtons, *identVirtualKeyboard, *identNull;
@@ -204,6 +210,19 @@ static void pollInputUpdates() {
                         case INPUT_PEN_PRESS:
                             xTranslate = (message.userInput.x * RMPPM_MAX_DIGI_X) / clientConnection->width();
                             yTranslate = (message.userInput.y * RMPPM_MAX_DIGI_Y) / clientConnection->height();
+                            dTranslate = (message.userInput.d * 255) / 100;
+                            break;
+                    }
+                    break;
+                case SHIM_INPUT_RMPPURE:
+                    switch(message.userInput.inputType & 0xF0) {
+                        case INPUT_TOUCH_PRESS:
+                            xTranslate = ((message.userInput.x * RMPPURE_MAX_TOUCH_X) / (int) clientConnection->width());
+                            yTranslate = ((message.userInput.y * RMPPURE_MAX_TOUCH_Y) / (int) clientConnection->height());
+                            break;
+                        case INPUT_PEN_PRESS:
+                            xTranslate = (message.userInput.x * RMPPURE_MAX_DIGI_X) / clientConnection->width();
+                            yTranslate = (message.userInput.y * RMPPURE_MAX_DIGI_Y) / clientConnection->height();
                             dTranslate = (message.userInput.d * 255) / 100;
                             break;
                     }

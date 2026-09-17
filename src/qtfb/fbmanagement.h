@@ -50,6 +50,7 @@ namespace qtfb::management {
     void unregisterController(FBKey key);
     bool isControllerAssociated(FBKey key);
 
-    void forwardUserInput(qtfb::FBKey key, struct qtfb::UserInputContents *input);
+    void forwardUserInput(qtfb::FBKey key, const struct qtfb::UserInputContents &input);
+    void sendDeviceStateChange(qtfb::FBKey key, const struct qtfb::DeviceStateChangedContents & message);
     void start();
 }

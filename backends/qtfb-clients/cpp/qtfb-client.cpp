@@ -56,6 +56,12 @@ qtfb::ClientConnection::ClientConnection(qtfb::FBKey framebufferID, uint8_t shmT
                 _width = RMPPM_WIDTH;
                 _height = RMPPM_HEIGHT;
                 break;
+            case FBFMT_RMPPURE_RGB565:
+            case FBFMT_RMPPURE_RGB888:
+            case FBFMT_RMPPURE_RGBA8888:
+                _width = RMPPURE_WIDTH;
+                _height = RMPPURE_HEIGHT;
+                break;
         }
     }
     if(send(sock, &initMessage, sizeof(initMessage), 0) == -1) {

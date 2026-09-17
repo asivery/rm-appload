@@ -35,6 +35,7 @@
 #define DEV_TYPE_RM2 1
 #define DEV_TYPE_RMPP 2
 #define DEV_TYPE_RMPPM 3
+#define DEV_TYPE_RMPPURE 4
 
 int shimModelType;
 bool shimInput;
@@ -58,7 +59,9 @@ void readRealDeviceType() {
     for(int i = 0; i<sizeof(buffer); i++) {
         if(buffer[i] >= 'a' && buffer[i] <= 'z') buffer[i] -= ' ';
     }
-    if(strstr(buffer, "FERRARI") != NULL) {
+    if(strstr(buffer, "TATSU") != NULL) {
+        realDeviceType = DEV_TYPE_RMPPURE;
+    } else if(strstr(buffer, "FERRARI") != NULL) {
         realDeviceType = DEV_TYPE_RMPP;
     } else if(strstr(buffer, "CHIAPPA") != NULL) {
         realDeviceType = DEV_TYPE_RMPPM;
@@ -120,6 +123,9 @@ void __attribute__((constructor)) __construct () {
         } else if(strcasecmp(temp, "RMPPM") == 0) {
             shimModelType = DEV_TYPE_RMPPM;
             shimInputType = SHIM_INPUT_RMPPM;
+        } else if(strcasecmp(temp, "RMPPURE") == 0) {
+            shimModelType = DEV_TYPE_RMPPURE;
+            shimInputType = SHIM_INPUT_RMPPURE;
         } else {
             CERR << "Invalid model shim type " << temp << std::endl;
         }
@@ -166,6 +172,9 @@ void __attribute__((constructor)) __construct () {
                 case DEV_TYPE_RMPPM:
                     shimType = FBFMT_RMPPM_RGB888;
                     break;
+                case DEV_TYPE_RMPPURE:
+                    shimType = FBFMT_RMPPURE_RGB888;
+                    break;
             }
         } else if(strcmp(fbMode, "N_RGBA8888") == 0) {
             switch(realDeviceType) {
@@ -180,6 +189,9 @@ void __attribute__((constructor)) __construct () {
                 case DEV_TYPE_RMPPM:
                     shimType = FBFMT_RMPPM_RGBA8888;
                     break;
+                case DEV_TYPE_RMPPURE:
+                    shimType = FBFMT_RMPPURE_RGBA8888;
+                    break;
             }
         } else if(strcmp(fbMode, "N_RGB565") == 0) {
             switch(realDeviceType) {
@@ -191,6 +203,9 @@ void __attribute__((constructor)) __construct () {
                     break;
                 case DEV_TYPE_RMPPM:
                     shimType = FBFMT_RMPPM_RGB565;
+                    break;
+                case DEV_TYPE_RMPPURE:
+                    shimType = FBFMT_RMPPURE_RGB565;
                     break;
             }
         } else {
@@ -209,6 +224,8 @@ void __attribute__((constructor)) __construct () {
             shimInputType = SHIM_INPUT_RMPP;
         } else if(strcmp(shimMode, "RMPPM") == 0) {
             shimInputType = SHIM_INPUT_RMPPM;
+        } else if(strcmp(shimMode, "RMPPURE") == 0) {
+            shimInputType = SHIM_INPUT_RMPPURE;
         } else if(strcmp(shimMode, "NATIVE") == 0) {
             shimInputType = realDeviceType;
         }
@@ -237,6 +254,7 @@ void __attribute__((constructor)) __construct () {
             break;
         case SHIM_INPUT_RMPP:
         case SHIM_INPUT_RMPPM:
+        case SHIM_INPUT_RMPPURE:
             pathDigitizer = RMPP_DIGITIZER;
             pathTouchScreen = RMPP_TOUCHSCREEN;
             pathButtons = "";
@@ -326,6 +344,9 @@ int spoofModelFD() {
             break;
         case DEV_TYPE_RMPPM:
             fakeModel = "reMarkable Chiappa\n";
+            break;
+        case DEV_TYPE_RMPPURE:
+            fakeModel = "reMarkable Tatsu\n";
             break;
     }
 

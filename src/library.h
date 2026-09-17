@@ -48,9 +48,10 @@ namespace appload::library {
         QString getAppName() const;
         qint64 launch(int qtfbKey, QStringList extraArgs, QMap<QString, QString> extraEnv) const;
         bool isQTFB() const;
-        AspectRatio getAspectRatio() const;
+        float aspectRatio() const;
         bool disablesWindowedMode() const;
         bool supportsVirtualKeyboard() const;
+        bool supportsRotation() const;
         const appload::vk::Layout *getVirtualKeyboardLayout() const;
 
         bool valid = false;
@@ -65,9 +66,10 @@ namespace appload::library {
         QStringList args;
         std::map<QString, QString> environment;
         bool _isQTFB;
+        float _aspectRatio;
         bool _disablesWindowedMode;
+        bool _supportsRotation;
         const appload::vk::Layout *_virtualKeyboardLayout;
-        AspectRatio aspectRatio;
 
         void parseManifest();
     };
@@ -89,8 +91,11 @@ namespace appload::library {
         bool isBackendRequired() const;
         bool isFrontendRunning() const;
         bool supportsScaling() const;
+        bool supportsRotation() const;
         bool canHaveMultipleFrontends() const;
         bool disablesWindowedMode() const;
+        float aspectRatio() const;
+        int width() const;
         bool valid = false;
         bool currentlyUnloading = false;
         int loadedFrontendInstanceCount = 0;
@@ -101,7 +106,10 @@ namespace appload::library {
         QString internalIdentifier;
         bool loadsBackend;
         bool _supportsScaling;
+        bool _supportsRotation;
         bool _canHaveMultipleFrontends;
+        float _aspectRatio;
+        int _width;
         bool frontendLoaded = false;
         void parseManifest();
     };
@@ -113,4 +121,5 @@ namespace appload::library {
     appload::library::LoadedApplication *get(const QString &id);
     const std::map<QString, appload::library::LoadedApplication*> &getRef();
     const std::map<QString, appload::library::ExternalApplication*> &getExternals();
+    std::tuple<float, int> parseAspectRatioAndWidth(const QJsonObject&, const QString&);
 };

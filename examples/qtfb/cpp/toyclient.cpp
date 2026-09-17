@@ -66,7 +66,25 @@ int main(){
         struct qtfb::ServerMessage externalMessage;
         while(!close) {
             conn.pollServerPacket(externalMessage);
-            cout << "Got a message " << externalMessage.type << ": " << externalMessage.userInput.x << ", " << externalMessage.userInput.y << endl;
+            cout << "Got a message " << (int) externalMessage.type << ": ";
+            switch(externalMessage.type) {
+                case MESSAGE_DEVICE_STATE_INIT:
+                    cout << "[INIT] ";
+                case MESSAGE_DEVICE_STATE_CHANGED:
+                    switch(externalMessage.deviceStateChanged.reason) {
+                        case STATE_CHANGED_REASON_ROTATION:
+                            cout << "[Rotation]: " << externalMessage.deviceStateChanged.rotation.rotation;
+                            break;
+                        default:
+                            cout << "[UNKNOWN:" << (int) externalMessage.deviceStateChanged.reason << "]";
+                            break;
+                    }
+                    break;
+                case MESSAGE_USERINPUT:
+                    cout << "[UserInput]: " << externalMessage.userInput.x << ", " << externalMessage.userInput.y;
+                    break;
+            }
+            cout << endl;
         }
     });
 

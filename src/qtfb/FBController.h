@@ -13,25 +13,47 @@
 #include <QJsonValue>
 #include <QQuickPaintedItem>
 
+#include <optional>
+
 #include "common.h"
 
 class FBController : public QQuickPaintedItem
 {
     Q_PROPERTY(bool active READ active NOTIFY activeChanged)
-    Q_PROPERTY(int framebufferID READ framebufferID WRITE setFramebufferID)
-    Q_PROPERTY(bool allowScaling READ allowScaling WRITE setAllowScaling)
+    Q_PROPERTY(int framebufferID MEMBER framebufferID WRITE setFramebufferID)
+    Q_PROPERTY(bool allowScaling MEMBER allowScaling)
     Q_PROPERTY(int refreshMode READ refreshMode NOTIFY refreshModeChanged)
+    Q_PROPERTY(QSize framebufferSize READ framebufferSize NOTIFY framebufferSizeChanged)
+    Q_PROPERTY(FillMode fillMode MEMBER fillMode)
+    Q_PROPERTY(Rotation fbRotation MEMBER fbRotation WRITE setFbRotation NOTIFY fbRotationChanged)
+    Q_PROPERTY(bool sendFlippedRotationToClient MEMBER sendFlippedRotationToClient)
     Q_OBJECT
 public:
     explicit FBController(QQuickItem *parent = nullptr) : QQuickPaintedItem(parent) { setAcceptTouchEvents(true); setAcceptedMouseButtons((Qt::MouseButtons) 0xFFFFFFFF); setFocusPolicy(Qt::StrongFocus); }
     virtual ~FBController();
 
-    void setFramebufferID(int fbID);
-    int framebufferID() const;
+    enum FillMode
+    {
+        Stretch,
+        PreserveAspectFit,
+        PreserveAspectCrop,
+        Pad
+    };
+    Q_ENUMS(FillMode)
 
-    void setAllowScaling(bool a);
-    bool allowScaling() const;
+    enum Rotation
+    {
+        Deg0 = 0,
+        Deg90L = 1,
+        Deg90R = 2,
+        Deg180 = 3,
+    };
+    Q_ENUMS(Rotation)
+
+    void setFramebufferID(int fbID);
+
     int refreshMode() const;
+    QSize framebufferSize() const;
     void setRefreshMode(int refreshMode);
 
     bool active() const;
@@ -41,8 +63,12 @@ public:
     bool isMidPaint;
     virtual void paint(QPainter *painter);
     void associateSHM(QImage *image);
+    std::vector<struct qtfb::DeviceStateChangedContents> buildInitialStatePackets();
+    void setFbRotation(Rotation rotation);
 
-    QPoint convertPointToQTFBPixels(const QPointF &input);
+    std::optional<QPoint> convertPointToQTFBPixels(const QPointF &input);
+    QRect convertQTFBRectToScreen(const QRect &input);
+    QRect translateToCounteractRotation(const QRect &input);
 
     virtual void mousePressEvent(QMouseEvent *me) override;
     virtual void mouseMoveEvent(QMouseEvent *me) override;
@@ -63,15 +89,23 @@ signals:
     void dragDown();
     void requestFullRefresh();
     void refreshModeChanged();
+    void framebufferSizeChanged();
+    void fbRotationChanged();
 
 private:
-    int _framebufferID = -1;
+    int framebufferID = -1;
     int _refreshMode = DEFAULT_WAVEFORM_MODE;
     bool _active = false;
-    bool _allowScaling = false;
+    Rotation fbRotation = Deg0;
+    bool allowScaling = false;
+    bool sendFlippedRotationToClient = false;
+    FillMode fillMode = Stretch;
 
     bool checkingGestureDragDown = false;
     bool refreshedScreenAlready = false;
 
     QImage *image = nullptr;
+
+    void mouseEvent(QMouseEvent *me, int inputType);
+    qtfb::DeviceStateChangedContents formRotationChangePacket();
 };

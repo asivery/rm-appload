@@ -7,8 +7,14 @@
 .qmake.stash
 /appload
 Makefile
+
 **/*.so
-examples/appload/full/backend/target/
+**/*.o
+**/moc_*.cpp
+**/moc_*.h
+/qrc_resources.cpp
+
 examples/appload/full/output/
 examples/appload/full/output-rmpp/
 examples/appload/full/output-rm/
+**/target/

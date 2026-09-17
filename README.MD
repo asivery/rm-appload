@@ -71,6 +71,8 @@ The manifest file has the following properties:
 - entry: The path to the entry point of the frontend (the root QML file)
 - canHaveMultipleFrontends: Whether or not there can be multiple frontends loaded at the same time
 - supportsScaling: Whether or not the application supports arbitrary window sizes
+- aspectRatio: 'auto' (default) | 'original' | 'move' | float - defines the aspect ratio of screen the application is built for. Original - rM1 / rM2 / rMPP, move - rMPPM
+- width: 'auto' | 'original' | 'move' | float - defines the ideal width of the screen for this application. 'auto' defaults to the value specified by the 'aspectRatio' field. If that value is not specified, it chooses the width of the current device's screen
 
 Applications' backends have the ability to stay running in the background, and unless killed by the app, won't be stopped. To stop an application permanently, in the `unloading()` function in the root file, invoke `terminate()` on any of the endpoints. That call will kill the backend and immediately unload any still existing frontends.
 
@@ -100,8 +102,8 @@ The `external.manifest.json` file has the following properties:
 - environment: A dictionary of key-value string pairs of the process' environment variables
 - args: A list of strings - the arguments that will be passed to the executable
 - qtfb: Boolean - whether or not to allocate a QTFB framebuffer for the application. The framebuffer's ID will be passed as the envvar `QTFB_KEY` to the application
-- aspectRatio: 'auto' (default) | 'original' | 'move' - defines the type of screen the application is built for. Original - rM1 / rM2 / rMPP, move - rMPPM
 - disablesWindowedMode: Boolean - set to true to disable windowed mode for this particular application
+- aspectRatio: 'auto' (default) | 'original' | 'move' | float - see description in the "Applications' format" section
 
 ## Launching applications programmatically
 
@@ -135,3 +137,5 @@ To compile AppLoad for on-PC testing, run `qmake6 .`, then `make` in the root of
 Alternatively, if you don't want to build, you can download the [latest release](https://github.com/asivery/rmpp-appload/releases/latest).  
 
 ## Happy Hacking!
+
+P.S. Agent PRs will get rejected, and AI-written code in general is not welcome. If you see a problem, please write an issue instead of submitting an AI-written solution as a pull request.

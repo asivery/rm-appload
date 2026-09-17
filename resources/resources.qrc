@@ -5,6 +5,7 @@
 		<file alias="icons/exit">icons/exit.svg</file>
 		<file alias="icons/check">icons/check.svg</file>
 		<file alias="icons/keyboard">icons/keyboard.svg</file>
+		<file alias="icons/rotate">icons/rotate.svg</file>
 
 		<file>qml/appload.qml</file>
 		<file>qml/window.qml</file>

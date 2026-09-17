@@ -8,6 +8,7 @@
 #define SHIM_INPUT_RM2 1
 #define SHIM_INPUT_RMPP 2
 #define SHIM_INPUT_RMPPM 3
+#define SHIM_INPUT_RMPPURE 4
 
 int inputShimOpen(fileident_t ident, int flags, mode_t mode);
 int inputShimClose(int fd, int (*realClose)(int fd));

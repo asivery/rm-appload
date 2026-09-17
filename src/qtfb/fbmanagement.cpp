@@ -23,6 +23,10 @@ My implementation of the shared QT-framebuffer idea works by:
 static std::mutex globalBackendsListMutex;
 #define SYNCHRONIZE const std::lock_guard<std::mutex> __lock(globalBackendsListMutex)
 
+// Never wait for messages to come through. Not all clients have to be actively waiting for new input.
+// If the socket's buffer was to overflow, simply drop the message.
+#define SEND(message) send(connection->clientFD, &message, sizeof(message), MSG_DONTWAIT)
+
 void tryToMatchUp(qtfb::FBKey key){
     // Try to find the client in the clients' list
     if(qtfb::management::connections.find(key) == qtfb::management::connections.end()) {
@@ -32,19 +36,25 @@ void tryToMatchUp(qtfb::FBKey key){
         return; // Framebuffer not found
     }
     // Both of them found! Assign one to another.
-    qtfb::management::ClientBackend *connection = qtfb::management::connections[key];
+    qtfb::management::ClientBackend *backend = qtfb::management::connections[key];
     QPointer<FBController> controller = qtfb::management::framebuffers[key];
-    if(connection->shm == NULL || controller.isNull()){
+    if(backend->shm == NULL || controller.isNull()){
         CERR << "Invalid state: Cannot have an partially-associated connection in the connections map!" << std::endl;
         return;
     }
-    controller->associateSHM(connection->image);
-    CERR << "Associated connection <==> framebuffer " << key << std::endl;
-}
+    controller->associateSHM(backend->image);
+    CERR << "Associated backend <==> framebuffer " << key << std::endl;
+    // On assoc. inform all potential clients what the current system state is.
+    for(const auto &ref : controller->buildInitialStatePackets()) {
+        struct qtfb::ServerMessage outbound = {
+            .type = (uint8_t) MESSAGE_DEVICE_STATE_INIT,
+            .deviceStateChanged = ref
+        };
 
-// Never wait for messages to come through. Not all clients have to be actively waiting for new input.
-// If the socket's buffer was to overflow, simply drop the message.
-#define SEND(message) send(connection->clientFD, &message, sizeof(message), MSG_DONTWAIT)
+        for(qtfb::management::ClientConnection *connection : backend->connections)
+            SEND(outbound);
+    }
+}
 
 void qtfb::management::registerController(FBKey key, QPointer<FBController> controller) {
     if(key == -1) return;
@@ -84,18 +94,21 @@ static bool createSHM(qtfb::management::ClientBackend *connection, int shmType, 
             break;
         case FBFMT_RMPP_RGB888:
         case FBFMT_RMPPM_RGB888:
+        case FBFMT_RMPPURE_RGB888:
             shmSize = height * width * 3;
             bpl = 3 * width;
             format = QImage::Format::Format_RGB888;
             break;
         case FBFMT_RMPP_RGBA8888:
         case FBFMT_RMPPM_RGBA8888:
+        case FBFMT_RMPPURE_RGBA8888:
             shmSize = height * width * 4;
             bpl = 4 * width;
             format = QImage::Format::Format_RGBA8888;
             break;
         case FBFMT_RMPP_RGB565:
         case FBFMT_RMPPM_RGB565:
+        case FBFMT_RMPPURE_RGB565:
             shmSize = height * width * 2;
             bpl = 2 * width;
             format = QImage::Format::Format_RGB16;
@@ -111,7 +124,7 @@ static bool createSHM(qtfb::management::ClientBackend *connection, int shmType, 
     connection->shmKey = rand() & ~0x80000000;
     FORMAT_SHM(shmText, connection->shmKey);
     shm_unlink(shmText);
-    connection->shmFD = shm_open(shmText, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+    connection->shmFD = shm_open(shmText, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
     if(connection->shmFD == -1) {
         CERR << "Failed to shm_open()!" << std::endl;
         return false;
@@ -153,6 +166,10 @@ static bool createDefaultSHM(qtfb::management::ClientBackend *connection, int sh
         case FBFMT_RMPPM_RGBA8888:
         case FBFMT_RMPPM_RGB565:
             return createSHM(connection, shmType, RMPPM_WIDTH, RMPPM_HEIGHT);
+        case FBFMT_RMPPURE_RGB888:
+        case FBFMT_RMPPURE_RGBA8888:
+        case FBFMT_RMPPURE_RGB565:
+            return createSHM(connection, shmType, RMPPURE_WIDTH, RMPPURE_HEIGHT);
         default:
             return createSHM(connection, shmType, -1, -1);
     }
@@ -188,34 +205,47 @@ static int handleInitialize(qtfb::management::ClientConnection *connection, qtfb
         };
         SEND(outbound);
         backend->connections.push_back(connection);
-        return RESP_OK;
+
+        qtfb::FBKey key = connection->fbKey;
+        if(qtfb::management::framebuffers.find(key) != qtfb::management::framebuffers.end() ) {
+            auto controller = qtfb::management::framebuffers[key];
+            if(!controller.isNull()) for(const auto &ref : controller->buildInitialStatePackets()) {
+                outbound = {
+                    .type = (uint8_t) MESSAGE_DEVICE_STATE_INIT,
+                    .deviceStateChanged = ref
+                };
+                SEND(outbound);
+            }
+        }
+
+    } else {
+        qtfb::management::ClientBackend *newBackend = new qtfb::management::ClientBackend();
+        bool result = false;
+        switch(messageType) {
+            case MESSAGE_CUSTOM_INITIALIZE:
+                result = createSHM(newBackend, inbound->customInit.framebufferType, inbound->customInit.width, inbound->customInit.height);
+                break;
+            case MESSAGE_INITIALIZE:
+                result = createDefaultSHM(newBackend, inbound->init.framebufferType);
+                break;
+        }
+        if(!result) {
+            delete newBackend;
+            return RESP_ERR;
+        }
+        // Send the SHM key over to the client
+        qtfb::ServerMessage outbound = {
+            .type = MESSAGE_INITIALIZE,
+            .init = {
+                .shmKeyDefined = newBackend->shmKey,
+                .shmSize = newBackend->shmSize,
+            },
+        };
+        SEND(outbound);
+        newBackend->connections.push_back(connection);
+        qtfb::management::connections[connection->fbKey] = newBackend;
+        tryToMatchUp(connection->fbKey);
     }
-    qtfb::management::ClientBackend *newBackend = new qtfb::management::ClientBackend();
-    bool result = false;
-    switch(messageType) {
-        case MESSAGE_CUSTOM_INITIALIZE:
-            result = createSHM(newBackend, inbound->customInit.framebufferType, inbound->customInit.width, inbound->customInit.height);
-            break;
-        case MESSAGE_INITIALIZE:
-            result = createDefaultSHM(newBackend, inbound->init.framebufferType);
-            break;
-    }
-    if(!result) {
-        delete newBackend;
-        return RESP_ERR;
-    }
-    // Send the SHM key over to the client
-    qtfb::ServerMessage outbound = {
-        .type = MESSAGE_INITIALIZE,
-        .init = {
-            .shmKeyDefined = newBackend->shmKey,
-            .shmSize = newBackend->shmSize,
-        },
-    };
-    SEND(outbound);
-    newBackend->connections.push_back(connection);
-    qtfb::management::connections[connection->fbKey] = newBackend;
-    tryToMatchUp(connection->fbKey);
     return RESP_OK;
 }
 
@@ -422,17 +452,29 @@ void qtfb::management::start(){
     thread.detach();
 }
 
-void qtfb::management::forwardUserInput(qtfb::FBKey key, struct qtfb::UserInputContents *input) {
+void sendMessage(qtfb::FBKey key, struct qtfb::ServerMessage outbound) {
     SYNCHRONIZE;
     auto position = qtfb::management::connections.find(key);
     if(position != qtfb::management::connections.end()){
         qtfb::management::ClientBackend *backend = position->second;
-        struct ServerMessage outbound = {
-            .type = MESSAGE_USERINPUT,
-            .userInput = *input
-        };
         for(qtfb::management::ClientConnection *connection : backend->connections) {
             SEND(outbound);
         }
     }
+}
+
+void qtfb::management::forwardUserInput(qtfb::FBKey key, const struct qtfb::UserInputContents &input) {
+    struct ServerMessage outbound = {
+        .type = MESSAGE_USERINPUT,
+        .userInput = input
+    };
+    sendMessage(key, outbound);
+}
+
+void qtfb::management::sendDeviceStateChange(qtfb::FBKey key, const struct qtfb::DeviceStateChangedContents &message) {
+    struct ServerMessage outbound = {
+        .type = (uint8_t) MESSAGE_DEVICE_STATE_CHANGED,
+        .deviceStateChanged = message
+    };
+    sendMessage(key, outbound);
 }

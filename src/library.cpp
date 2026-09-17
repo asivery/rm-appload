@@ -97,8 +97,20 @@ bool appload::library::LoadedApplication::supportsScaling() const {
     return _supportsScaling;
 }
 
+bool appload::library::LoadedApplication::supportsRotation() const {
+    return _supportsRotation;
+}
+
 bool appload::library::LoadedApplication::canHaveMultipleFrontends() const {
     return _canHaveMultipleFrontends;
+}
+
+float appload::library::LoadedApplication::aspectRatio() const {
+    return _aspectRatio;
+}
+
+int appload::library::LoadedApplication::width() const {
+    return _width;
 }
 
 void appload::library::LoadedApplication::loadFrontend() {
@@ -140,7 +152,11 @@ void appload::library::LoadedApplication::parseManifest(){
     qmlEntrypoint = jsonObject.value("entry").toString();
     loadsBackend = jsonObject.value("loadsBackend").toBool();
     _supportsScaling = jsonObject.value("supportsScaling").toBool(false);
+    _supportsRotation = jsonObject.value("supportsRotation").toBool(false);
     _canHaveMultipleFrontends = jsonObject.value("canHaveMultipleFrontends").toBool(true);
+    auto aspectRatioAndWidth = appload::library::parseAspectRatioAndWidth(jsonObject, filePath);
+    std::tie(this->_aspectRatio, this->_width) = aspectRatioAndWidth;
+
     internalIdentifier = randString(10);
 
     valid = !appName.isEmpty() && !appID.isEmpty() && !qmlEntrypoint.isEmpty();
@@ -266,11 +282,52 @@ const std::map<QString, appload::library::ExternalApplication *>&appload::librar
     return appload::library::externalApplications;
 }
 
-QString appload::library::aspectRatioToString(AspectRatio ratio) {
-    switch(ratio) {
-        case appload::library::AspectRatio::ORIGINAL: return "original";
-        case appload::library::AspectRatio::MOVE: return "move";
-        case appload::library::AspectRatio::AUTO: return "auto";
+std::tuple<float, int> appload::library::parseAspectRatioAndWidth(const QJsonObject &manifest, const QString &filePath) {
+    /*
+        AspectRatio of zero means auto. Width of zero means "as is current device"
+    */
+    int defaultWidth = 0;
+    float aspectRatio = (float) manifest.value("aspectRatio").toDouble(-1);
+    if(aspectRatio == -1) {
+        QString _aspectRatio = manifest.value("aspectRatio").toString("auto").toLower();
+        if(_aspectRatio == "original") {
+            aspectRatio = 0.75;
+            defaultWidth = 1620;
+        } else if(_aspectRatio == "move") {
+            aspectRatio = 0.5625;
+            defaultWidth = 954;
+        } else if(_aspectRatio == "auto") {
+            aspectRatio = 0;
+            defaultWidth = 0;
+        } else {
+            bool ok;
+            aspectRatio = (float) _aspectRatio.toFloat(&ok);
+            defaultWidth = 0;
+            if(!ok) {
+                qWarning() << "Invalid aspect ratio defined in manifest " << filePath << ": " << _aspectRatio;
+                aspectRatio = 0.f;
+            } 
+        }
     }
-    return "";
+
+    int width = manifest.value("width").toInt(-1);
+    if(width == -1) {
+        QString _width = manifest.value("width").toString("auto").toLower();
+        if(_width == "auto") {
+            width = defaultWidth;
+        } else if(_width == "original") {
+            width = 1620;
+        } else if(_width == "move") {
+            width = 954;
+        } else {
+            bool ok;
+            width = _width.toInt(&ok);
+            if(!ok) {
+                qWarning() << "Invalid width defined in manifest " << filePath << ": " << _width;
+                width = 0;
+            } 
+        }
+    }
+
+    return std::make_tuple(aspectRatio, width);
 }

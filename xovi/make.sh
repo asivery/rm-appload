@@ -1,8 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
-rm -rf temporary
-mkdir temporary
+if [ ! -d temporary ]; then mkdir temporary; fi 
+rm -rf temporary/*
 cp -rv ../src temporary
 cp -rv template/* temporary/
 

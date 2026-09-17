@@ -11,6 +11,8 @@
 #define RMPP_HEIGHT 2160
 #define RMPPM_WIDTH 954
 #define RMPPM_HEIGHT 1696
+#define RMPPURE_WIDTH 1404
+#define RMPPURE_HEIGHT 1872
 
 #define MESSAGE_INITIALIZE 0
 #define MESSAGE_UPDATE 1
@@ -19,6 +21,8 @@
 #define MESSAGE_USERINPUT 4
 #define MESSAGE_SET_REFRESH_MODE 5
 #define MESSAGE_REQUEST_FULL_REFRESH 6
+#define MESSAGE_DEVICE_STATE_CHANGED 7
+#define MESSAGE_DEVICE_STATE_INIT 8
 
 #define FBFMT_RM2FB 0
 #define FBFMT_RMPP_RGB888 1
@@ -27,6 +31,9 @@
 #define FBFMT_RMPPM_RGB888 4
 #define FBFMT_RMPPM_RGBA8888 5
 #define FBFMT_RMPPM_RGB565 6
+#define FBFMT_RMPPURE_RGB888 7
+#define FBFMT_RMPPURE_RGBA8888 8
+#define FBFMT_RMPPURE_RGB565 9
 
 #define UPDATE_ALL 0
 #define UPDATE_PARTIAL 1
@@ -70,6 +77,13 @@
 #define INPUT_VKB_HOME 0x86
 #define INPUT_VKB_END 0x87
 
+#define STATE_CHANGED_REASON_ROTATION 0
+
+#define ROTATION_0 0
+#define ROTATION_L90 1
+#define ROTATION_R90 2
+#define ROTATION_180 3
+
 namespace qtfb {
     typedef int FBKey;
 
@@ -101,6 +115,15 @@ namespace qtfb {
         int x, y, d;
     };
 
+    struct DeviceStateChangedContents {
+        int reason;
+        union {
+            struct {
+                int rotation;
+            } rotation;
+        };
+    };
+
     struct ClientMessage {
         uint8_t type;
         union {
@@ -118,6 +141,7 @@ namespace qtfb {
         union {
             struct InitMessageResponseContents init;
             struct UserInputContents userInput;
+            struct DeviceStateChangedContents deviceStateChanged;
         };
     };
 }
