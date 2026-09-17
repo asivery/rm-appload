@@ -101,33 +101,43 @@ void FBController::markedUpdate(const QRect &rect) {
 }
 
 std::optional<QPoint> FBController::convertPointToQTFBPixels(const QPointF &input) {
-    QRect fbRect = convertQTFBRectToScreen(image->rect());
-    float screenWidth = width(), screenHeight = height();
+    QRect imgRect = image->rect();
     if(fbRotation == Deg90L || fbRotation == Deg90R) {
-        std::swap(screenWidth, screenHeight);
-        fbRect = QRect(fbRect.y(), fbRect.x(), fbRect.height(), fbRect.width());
+        imgRect = QRect(imgRect.y(), imgRect.x(), imgRect.height(), imgRect.width());
     }
+    QRect fbRect = convertQTFBRectToScreen(imgRect);
+
+    QTransform transform;
+    QPolygon rotatedImgPoly;
     if(!fbRect.contains(input.toPoint())) return {};
-    QPointF center = fbRect.center();
-    QTransform transform = QTransform().translate(center.x(), center.y());
+
     switch(fbRotation) {
-        case Deg0: break;
+        case Deg0:
+            rotatedImgPoly = QPolygon(imgRect);
+            break;
         case Deg90L:
-            transform.rotate(90);
+            rotatedImgPoly << imgRect.topRight()
+                        << imgRect.bottomRight()
+                        << imgRect.bottomLeft()
+                        << imgRect.topLeft();
             break;
         case Deg90R:
-            transform.rotate(-90);
+            rotatedImgPoly << imgRect.bottomLeft()
+                        << imgRect.topLeft()
+                        << imgRect.topRight()
+                        << imgRect.bottomRight();
             break;
         case Deg180:
-            transform.rotate(180);
+            rotatedImgPoly << imgRect.bottomRight()
+                        << imgRect.bottomLeft()
+                        << imgRect.topLeft()
+                        << imgRect.topRight();
             break;
     }
-    transform.scale(
-        screenWidth / ((float) fbRect.width()),
-        screenHeight / ((float) fbRect.height())
-    );
-    transform.translate(-center.x(), -center.y());
-    return transform.map(input).toPoint();
+    if(QTransform::quadToQuad(QPolygon(fbRect), rotatedImgPoly, transform)) {
+        return transform.map(input).toPoint();
+    }
+    return {};
 }
 
 QRect FBController::translateToCounteractRotation(const QRect &input) {
