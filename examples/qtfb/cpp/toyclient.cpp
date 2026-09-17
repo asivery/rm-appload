@@ -81,7 +81,7 @@ int main(){
                     }
                     break;
                 case MESSAGE_USERINPUT:
-                    cout << "[UserInput]: " << externalMessage.userInput.x << ", " << externalMessage.userInput.y;
+                    cout << "[UserInput]: " << "Type: " << externalMessage.userInput.inputType << ", Data: " << externalMessage.userInput.x << ", " << externalMessage.userInput.y;
                     break;
             }
             cout << endl;
