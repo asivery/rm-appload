@@ -81,9 +81,6 @@ public:
     Q_INVOKABLE void virtualKeyboardKeyDown(int key);
     Q_INVOKABLE void virtualKeyboardKeyUp(int key);
 
-    Q_INVOKABLE void specialKeyDown(int key);
-    Q_INVOKABLE void specialKeyUp(int key);
-
 signals:
     void activeChanged();
     void dragDown();

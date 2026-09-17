@@ -248,14 +248,6 @@ void FBController::virtualKeyboardKeyUp(int key) {
     sendKeyEvent(key, INPUT_VKB_RELEASE, framebufferID);
 }
 
-void FBController::specialKeyDown(int key) {
-    sendKeyEvent(key, INPUT_BTN_PRESS, framebufferID);
-}
-
-void FBController::specialKeyUp(int key) {
-    sendKeyEvent(key, INPUT_BTN_RELEASE, framebufferID);
-}
-
 void FBController::touchEvent(QTouchEvent *me) {
     if(framebufferID != -1) {
         int lenPoints = me->points().length();
@@ -312,25 +304,12 @@ void FBController::touchEvent(QTouchEvent *me) {
     me->accept();
 }
 
-static inline int translateKey(int qtKey) {
-    switch(qtKey) {
-        case Qt::Key_Right: return INPUT_BTN_X_RIGHT;
-        case Qt::Key_Left: return INPUT_BTN_X_LEFT;
-        case Qt::Key_Home: return INPUT_BTN_X_HOME;
-    }
-    return -1;
-}
-
 void FBController::keyPressEvent(QKeyEvent *ke) {
-    int k = translateKey(ke->key());
-    if(k != -1)
-        specialKeyDown(k);
+    sendKeyEvent(ke->key(), INPUT_BTN_PRESS, framebufferID);
 }
 
 void FBController::keyReleaseEvent(QKeyEvent *ke) {
-    int k = translateKey(ke->key());
-    if(k != -1)
-        specialKeyUp(k);
+    sendKeyEvent(ke->key(), INPUT_BTN_RELEASE, framebufferID);
 }
 
 int FBController::refreshMode() const { return _refreshMode; }

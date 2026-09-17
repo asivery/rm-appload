@@ -96,49 +96,28 @@ static struct input_event evt(unsigned short type, unsigned short code, int valu
     return x;
 }
 
-static int mapKey(int x) {
-    switch(x) {
-        case INPUT_BTN_X_LEFT: return KEY_LEFT;
-        case INPUT_BTN_X_RIGHT: return KEY_RIGHT;
-        case INPUT_BTN_X_HOME: return KEY_HOME;
-    }
-    return 0;
-}
-
-int mapAsciiToX11Key(int ascii) {
-    // Pure modifiers:
-    switch(ascii){
-        case INPUT_VKB_SHIFTMOD: return 0xffe1;
-        case INPUT_VKB_CTRLMOD: return 0xffe3;
-        case INPUT_VKB_ALTMOD: return 0xffe9;
-    }
-    // So it's not a pure modifier.
-    // ASCII unprintable characters
-    switch (ascii & 0xFF) {
-        case 8:                 return 0xff08;     // Backspace
-        case 9:                 return 0xff09;     // Tab
-        case 13:                return 0xff0d;     // Enter/Return
-        case 27:                return 0xff1b;     // Escape
-        case 127:               return 0xffff;     // Delete
-        case INPUT_VKB_LEFT:    return 0xff51;
-        case INPUT_VKB_UP:      return 0xff52;
-        case INPUT_VKB_RIGHT:   return 0xff53;
-        case INPUT_VKB_DOWN:    return 0xff54;
-        case INPUT_VKB_HOME:    return 0xff50;
-        case INPUT_VKB_END:     return 0xff57;
-        case INPUT_VKB_PGUP:    return 0xff55;
-        case INPUT_VKB_PGDOWN:  return 0xff56;
+int mapQTToX11Key(int key) {
+    switch (key) {
+        case 0x01000003:    return 0xff08;      // Backspace
+        case 0x01000001:    return 0xff09;      // Tab
+        case 0x01000004:    return 0xff0d;      // Enter/Return
+        case 0x01000000:    return 0xff1b;      // Escape
+        case 0x01000007:    return 0xffff;      // Delete
+        case 0x01000012:    return 0xff51;      // LEFT
+        case 0x01000013:    return 0xff52;      // UP
+        case 0x01000014:    return 0xff53;      // RIGHT
+        case 0x01000015:    return 0xff54;      // DOWN
+        case 0x01000010:    return 0xff50;      // HOME
+        case 0x01000011:    return 0xff57;      // END
+        case 0x01000016:    return 0xff55;      // PGUP
+        case 0x01000017:    return 0xff56;      // PGDOWN
+        case 0x01000020:    return 0xffe1;      // Shift
+        case 0x01000021:    return 0xffe3;      // Control
+        case 0x01000023:    return 0xffe9;      // Alt
     }
 
-
-    // If shift key pressed, uppercase the ascii
-    if((ascii & INPUT_VKB_SHIFTMOD) && (ascii >= 'a') && (ascii <= 'z')) {
-        ascii -= ' ';
-    }
     // Mask the pure ascii:
-    ascii &= 0xFF;
-
-    return ascii;
+    return key & 0xFF;
 }
 
 static void pushToAll(int queueType, struct input_event evt) {
@@ -156,7 +135,8 @@ static void pushToAll(int queueType, struct input_event evt) {
 static void pollInputUpdates() {
     qtfb::ServerMessage message;
     if(clientConnection) {
-        if(clientConnection->pollServerPacket(message) && message.type == MESSAGE_USERINPUT) {
+        if(!clientConnection->pollServerPacket(message)) return;
+        if(message.type == MESSAGE_USERINPUT) {
             // Did we get a packet?
             char state_a;
 
@@ -275,22 +255,22 @@ static void pollInputUpdates() {
                     pushToAll(QUEUE_PEN, evt(EV_SYN, SYN_REPORT, 0));
                     break;
                 case INPUT_BTN_PRESS:
-                    pushToAll(QUEUE_BUTTONS, evt(EV_KEY, mapKey(message.userInput.x), 1));
+                    pushToAll(QUEUE_BUTTONS, evt(EV_KEY, mapQTToX11Key(message.userInput.x), 1));
                     pushToAll(QUEUE_BUTTONS, evt(EV_SYN, SYN_REPORT, 0));
                     break;
                 case INPUT_BTN_RELEASE:
-                    pushToAll(QUEUE_BUTTONS, evt(EV_KEY, mapKey(message.userInput.x), 0));
+                    pushToAll(QUEUE_BUTTONS, evt(EV_KEY, mapQTToX11Key(message.userInput.x), 0));
                     pushToAll(QUEUE_BUTTONS, evt(EV_SYN, SYN_REPORT, 0));
                     break;
 
                 case INPUT_VKB_PRESS: {
-                    int code = mapAsciiToX11Key(message.userInput.x);
+                    int code = mapQTToX11Key(message.userInput.x);
                     pushToAll(QUEUE_VIRTUALKEYBOARD, evt(EV_KEY, code, 1));
                     pushToAll(QUEUE_VIRTUALKEYBOARD, evt(EV_SYN, SYN_REPORT, 0));
                     break;
                 }
                 case INPUT_VKB_RELEASE: {
-                    int code = mapAsciiToX11Key(message.userInput.x);
+                    int code = mapQTToX11Key(message.userInput.x);
                     pushToAll(QUEUE_VIRTUALKEYBOARD, evt(EV_KEY, code, 0));
                     pushToAll(QUEUE_VIRTUALKEYBOARD, evt(EV_SYN, SYN_REPORT, 0));
                     break;
@@ -298,6 +278,8 @@ static void pollInputUpdates() {
 
                 default: break;
             }
+        } else if (message.type == MESSAGE_DEVICE_STATE_INIT || message.type == MESSAGE_DEVICE_STATE_CHANGE) {
+            // ?
         }
     }
 }

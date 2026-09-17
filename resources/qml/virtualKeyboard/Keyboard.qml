@@ -20,7 +20,7 @@ import QtQuick 2.0
 Rectangle {
     id: keyboard
 
-    property int keyModifiers
+    property list<int> keyModifiers: []
     property Key resetSticky
     property Key currentStickyPressed
     property string keyFgColor: "#000000"
@@ -82,6 +82,18 @@ Rectangle {
     Loader {
         id: keyboardLoader
         anchors.fill: parent
+    }
+
+    function stickKey(code){
+        if(!keyModifiers.includes(code))
+            keyModifiers.push(code);
+    }
+
+    function unstickKey(code) {
+        let index;
+        while((index = keyModifiers.indexOf(code)) != -1) {
+            keyModifiers.splice(index, 1);
+        }
     }
 
     function rebuildKeyboard(layoutData, config) {

@@ -37,7 +37,7 @@ Rectangle {
     property bool isClick
     property int pressMouseY
     property int pressMouseX
-    property bool shiftActive: (vkb.keyModifiers & 0x100000) && !sticky
+    property bool shiftActive: (vkb.keyModifiers.includes(0x01000020)) && !sticky
 
     width: vkb.keyWidth   // some default
     height: vkb.keyHeight
@@ -113,17 +113,17 @@ Rectangle {
     }
 
     function handlePress(touchArea, x, y) {
-        console.log("Press " + label)
+        console.log("Press " + label + ", active" + JSON.stringify(vkb.keyModifiers))
         isClick = true;
         pressMouseX = x;
         pressMouseY = y;
 
         key.color = vkb.keyHilightBgColor
 
-        vkb.config.keyDown(currentCode | vkb.keyModifiers);
+        vkb.config.keyDown(currentCode);
 
         if (sticky) {
-            vkb.keyModifiers |= code;
+            vkb.stickKey(code);
             key.becomesSticky = true;
             vkb.currentStickyPressed = key;
         } else {
@@ -156,11 +156,11 @@ Rectangle {
         key.color = vkb.keyBgColor
 
         if (sticky && !becomesSticky) {
-            vkb.keyModifiers &= ~code
+            vkb.unstickKey(code);
             vkb.currentStickyPressed = null
         }
         if(!sticky) {
-            vkb.config.keyUp(currentCode | vkb.keyModifiers);
+            vkb.config.keyUp(currentCode);
         }
 
         if (vkb.keyAt(x, y) == key) {
@@ -192,10 +192,10 @@ Rectangle {
             // stickiness == 2 -> keep pressed
 
             if(stickiness>0) {
-                vkb.keyModifiers |= code
+                vkb.stickKey(code);
             } else {
                 vkb.config.keyUp(currentCode);
-                vkb.keyModifiers &= ~code
+                vkb.unstickKey(code);
             }
 
             vkb.resetSticky = null
