@@ -39,6 +39,7 @@ Inspired by [ddvk's awesome remarkable2-framebuffer](https://github.com/ddvk/rem
     - ANIMATE
     - CONTENT
     - UI
+    - SLEEP
 
     Default: UI
 - QTFB_SHIM_RESPECT_APP_REFRESH_MODES: Whether or not to let the application change the refresh mode (Default: true)

@@ -319,6 +319,8 @@ void __attribute__((constructor)) __construct () {
             clientConnection->setRefreshMode(REFRESH_MODE_CONTENT);
         } else if(strcmp(temp, "UI") == 0) {
             clientConnection->setRefreshMode(REFRESH_MODE_UI);
+        } else if(strcmp(temp, "SLEEP") == 0) {
+            clientConnection->setRefreshMode(REFRESH_MODE_SLEEP);
         } else {
             CERR << "Invalid refresh mode " << temp << std::endl;
         }

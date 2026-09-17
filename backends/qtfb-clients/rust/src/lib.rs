@@ -42,6 +42,7 @@ pub mod constants {
         Animate = 2,
         Content = 3,
         Ui = 4,
+        Sleep = 5,
     }
 
 
