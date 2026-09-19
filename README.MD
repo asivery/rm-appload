@@ -136,6 +136,11 @@ To compile AppLoad for on-PC testing, run `qmake6 .`, then `make` in the root of
 
 Alternatively, if you don't want to build, you can download the [latest release](https://github.com/asivery/rmpp-appload/releases/latest).  
 
+## Credits
+
+The icons used in this project come from [the Phosphor Icons pack](https://phosphoricons.com).
+
+
 ## Happy Hacking!
 
 P.S. Agent PRs will get rejected, and AI-written code in general is not welcome. If you see a problem, please write an issue instead of submitting an AI-written solution as a pull request.
