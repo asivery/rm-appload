@@ -51,7 +51,7 @@ void FBController::paint(QPainter *painter) {
             float _width = width(), _height = height();
             if(fbRotation == Deg90L || fbRotation == Deg90R)
                 std::swap(_width, _height);
-            painter->drawImage(translateToCounteractRotation(QRect((_width - image->width()) / 2, (_height - image->height()) / 2, width(), height())), *image);
+            painter->drawImage(translateToCounteractRotation(QRect(QPoint((_width - image->width()) / 2, (_height - image->height()) / 2), image->size())), *image);
         }
     } else {
         /*
@@ -94,7 +94,20 @@ void FBController::markedUpdate(const QRect &rect) {
 
     if(image) {
         auto updateRect = convertQTFBRectToScreen(rect).adjusted(0, 0, 1, 1);
-        update(updateRect);
+        QTransform rotate;
+        switch(fbRotation) {
+            case Deg0: break;
+            case Deg90L:
+                rotate.rotate(-90);
+                break;
+            case Deg90R:
+                rotate.rotate(90);
+                break;
+            case Deg180:
+                rotate.rotate(180);
+                break;
+        }
+        update(rotate.mapRect(translateToCounteractRotation(updateRect)));
     } else {
         update(rect);
     }
