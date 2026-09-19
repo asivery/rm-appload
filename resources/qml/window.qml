@@ -63,6 +63,12 @@ FocusScope {
             root._height = Math.max(minHeight, beforeFullscreenData.height)
             root.minimized = beforeFullscreenData.minimized;
             root.beforeFullscreenData = null;
+            root.windowRotation = root.globalRotation;
+            if(windowRotation == FBController.Deg90L || windowRotation == FBController.Deg90R) {
+                [root.width, root._height] = [Math.max(root.width, root._height), Math.min(root.width, root._height)];
+            } else {
+                [root.width, root._height] = [Math.min(root.width, root._height), Math.max(root.width, root._height)];
+            }
         } else {
             // Bring the window to fullscreen.
             root.beforeFullscreenData = {
