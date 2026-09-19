@@ -2,7 +2,7 @@
 
 # AppLoad
 
-AppLoad is a xovi extension for the RMPP which lets you write custom applications for the RMPP.
+AppLoad is a xovi extension for the RMPP which lets you write custom applications for the rM tablets.
 
 ## Dependencies
 
