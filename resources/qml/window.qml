@@ -47,6 +47,8 @@ FocusScope {
     property var windowRotation: FBController.Deg0
     property var globalRotation: FBController.Deg0
 
+    property alias windowCanvas: windowCanvas
+
     // External I/O from this component:
     signal closed
     function loadApplication(appId) {
@@ -409,7 +411,7 @@ FocusScope {
             focus: qtfbKey != -1
 
             fbRotation: !supportsRotation ? FBController.Deg0 : fullscreen ? root.globalRotation : root.windowRotation
-            sendFlippedRotationToClient: true
+            sendFlippedRotationToClient: false
 
             onActiveChanged: () => {
                 if(!windowCanvas.active) {

@@ -74,6 +74,9 @@ Rectangle {
             }
 
             win.qtfbKey = qtfbKey;
+            if(qtfbKey != -1) {
+                win.windowCanvas.forceActiveFocus();
+            }
             win.closed.connect(() => {
                 win.destroy();
                 if(_appLoadView.virtualKeyboardRef.active && _appLoadView.virtualKeyboardRef.config === win.keyboardConfig) {
