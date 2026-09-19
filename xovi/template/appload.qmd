@@ -184,7 +184,7 @@ AFFECT /appload/qml/window.qml
                 }
 
                 onRequestFullRefresh: () => {
-                    ~&482865290967253827&~.~&8021204117616398611&~(~&"2385305732936506181&~);
+                    ~&482865290967253827&~.~&8021204117616398611&~("5-finger gesture");
                 }
             }
         END TRAVERSE
