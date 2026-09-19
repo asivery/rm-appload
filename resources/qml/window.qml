@@ -362,19 +362,16 @@ FocusScope {
             }
 
             MouseArea {
+                property var rotationOrder: [FBController.Deg0, FBController.Deg90R, FBController.Deg180, FBController.Deg90L]
                 anchors.fill: parent
                 onClicked: () => {
                     [root._height, root.width] = [root.width, root._height];
-                    switch(windowRotation) {
-                        case FBController.Deg0: windowRotation = FBController.Deg90R;
-                        break;
-                        case FBController.Deg90R: windowRotation = FBController.Deg180;
-                        break;
-                        case FBController.Deg180: windowRotation = FBController.Deg90L;
-                        break;
-                        case FBController.Deg90L: windowRotation = FBController.Deg0;
-                        break;
-                    }
+                    windowRotation = rotationOrder[(rotationOrder.length + rotationOrder.indexOf(windowRotation) + 1) % rotationOrder.length]
+                }
+
+                onPressAndHold: () => {
+                    [root._height, root.width] = [root.width, root._height];
+                    windowRotation = rotationOrder[(rotationOrder.length + rotationOrder.indexOf(windowRotation) - 1) % rotationOrder.length]
                 }
             }
         }
