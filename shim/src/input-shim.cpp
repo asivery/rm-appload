@@ -278,7 +278,7 @@ static void pollInputUpdates() {
 
                 default: break;
             }
-        } else if (message.type == MESSAGE_DEVICE_STATE_INIT || message.type == MESSAGE_DEVICE_STATE_CHANGE) {
+        } else if (message.type == MESSAGE_DEVICE_STATE_INIT || message.type == MESSAGE_DEVICE_STATE_CHANGED) {
             // ?
         }
     }
