@@ -312,7 +312,7 @@ FocusScope {
 
         Rectangle {
             id: virtualKeyboardButton
-            width: parent.height
+            width: virtualKeyboardButton.visible ? parent.height : 0
             height: parent.height
             anchors.left: parent.left
             border.width: 2
@@ -345,7 +345,7 @@ FocusScope {
 
         Rectangle {
             id: rotateButton
-            width: parent.height
+            width: rotateButton.visible ? parent.height : 0
             height: parent.height
             anchors.left: virtualKeyboardButton.right
             border.width: 2
