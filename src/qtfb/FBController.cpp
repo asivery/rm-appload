@@ -115,10 +115,10 @@ void FBController::markedUpdate(const QRect &rect) {
 
 std::optional<QPoint> FBController::convertPointToQTFBPixels(const QPointF &input) {
     QRect imgRect = image->rect();
-    if(fbRotation == Deg90L || fbRotation == Deg90R) {
-        imgRect = QRect(imgRect.y(), imgRect.x(), imgRect.height(), imgRect.width());
-    }
     QRect fbRect = convertQTFBRectToScreen(imgRect);
+    if(fbRotation == Deg90L || fbRotation == Deg90R) {
+        fbRect = QRect(fbRect.y(), fbRect.x(), fbRect.height(), fbRect.width());
+    }
 
     QTransform transform;
     QPolygon rotatedImgPoly;
