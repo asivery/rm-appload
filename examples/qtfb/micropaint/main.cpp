@@ -8,13 +8,42 @@
 
 #include "../../../backends/qtfb-clients/cpp/qtfb-client.h"
 
-static constexpr uint16_t COLOR_BLACK = 0x0000;
-static constexpr uint16_t COLOR_WHITE = 0xFFFF;
-static constexpr uint16_t COLOR_RED   = 0xF800;
-
 static constexpr uint16_t BRUSH_COLORS[3] = {
     0xF800, 0x01F8, 0x003F
 };
+
+struct UpdateRect {
+    int x0, x1;
+    int y0, y1;
+    
+    UpdateRect() :x0(10000), x1(-1), y0(10000), y1(-1) {
+    }
+    
+    UpdateRect(int ix0, int iy0, int ix1, int iy1) :x0(ix0), x1(ix1), y0(iy0), y1(iy1) {}
+    
+    const UpdateRect& expand(UpdateRect expansion){
+        x0 = std::min(x0, expansion.x0);
+        x1 = std::max(x1, expansion.x1);
+        y0 = std::min(y0, expansion.y0);
+        y1 = std::max(y1, expansion.y1);
+        return *this;
+    }
+    
+    bool valid() const {
+        return x1 > x0 && y1 > y0;
+    }
+    
+    int width() {
+        if(!valid()) return 0;
+        return x1 - x0 + 1;
+    }
+    
+    int height() {
+        if(!valid()) return 0;
+        return y1 - y0 + 1;
+    }
+};
+
 
 static void clearFramebuffer(uint16_t* fb, uint32_t width, uint32_t height) {
     std::memset(fb, 0x00, width * height * sizeof(uint16_t));
@@ -87,8 +116,9 @@ int main(int argc, char** argv) {
             std::tuple<uint16_t, uint16_t>(width, height),
             false
         );
+        UpdateRect accumulatedRect;
         
-        connection.setRefreshMode(2);
+        connection.setRefreshMode(REFRESH_MODE_ANIMATE);
 
         auto* framebuffer = reinterpret_cast<uint16_t*>(connection.shm);
         
@@ -104,8 +134,18 @@ int main(int argc, char** argv) {
                 if(externalMessage.type == MESSAGE_USERINPUT) {
                     drawBrush(framebuffer, width, height,
                               externalMessage.userInput.x, externalMessage.userInput.y,
-                              BRUSH_COLORS[externalMessage.userInput.inputType % 3]);
-                    connection.sendPartialUpdate(externalMessage.userInput.x-2, externalMessage.userInput.y-2, 5, 5);
+                              BRUSH_COLORS[externalMessage.userInput.devId % 3]);
+                    UpdateRect currentRect(externalMessage.userInput.x-2, externalMessage.userInput.y-2, externalMessage.userInput.x+2, externalMessage.userInput.y+2);
+                    accumulatedRect.expand(currentRect);
+                    
+                    if(externalMessage.userInput.inputType & 1 == 1) { // it's a release, so send high quality update
+                        connection.setRefreshMode(REFRESH_MODE_CONTENT);
+                        connection.sendPartialUpdate(accumulatedRect.x0, accumulatedRect.y0, accumulatedRect.width(), accumulatedRect.height());
+                        accumulatedRect = UpdateRect();
+                        connection.setRefreshMode(REFRESH_MODE_ANIMATE);
+                    } else { // it's a press or move, send quick update
+                        connection.sendPartialUpdate(currentRect.x0, currentRect.y0, 5, 5);
+                    }
                 }
             }
         }
