@@ -13,6 +13,7 @@
 #include <QJsonValue>
 #include <QQuickPaintedItem>
 
+#include <map>
 #include <optional>
 
 #include "common.h"
@@ -74,6 +75,7 @@ public:
     virtual void mouseMoveEvent(QMouseEvent *me) override;
     virtual void mouseReleaseEvent(QMouseEvent *me) override;
     virtual void touchEvent(QTouchEvent *me) override;
+    virtual void touchUngrabEvent() override;
 
     virtual void keyPressEvent(QKeyEvent *ke) override;
     virtual void keyReleaseEvent(QKeyEvent *ke) override;
@@ -102,7 +104,9 @@ private:
     bool refreshedScreenAlready = false;
 
     QImage *image = nullptr;
+    std::map<int, QPoint> activeTouches; // Finger ID -> Last position sent to the app
 
     void mouseEvent(QMouseEvent *me, int inputType);
+    void releaseAllTouches();
     qtfb::DeviceStateChangedContents formRotationChangePacket();
 };

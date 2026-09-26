@@ -19,6 +19,7 @@
 #include <algorithm>
 
 #include "qtfb-client/qtfb-client.h"
+#include "touch-slots.h"
 
 #define DEV_NULL "/dev/null"
 
@@ -62,11 +63,7 @@ extern qtfb::ClientConnection *clientConnection;
 extern int shimInputType;
 extern std::set<fileident_t> *identDigitizer, *identTouchScreen, *identButtons, *identVirtualKeyboard, *identNull;
 
-struct TouchSlotState {
-    int x, y;
-};
-
-std::map<int, TouchSlotState> touchStates;
+static TouchSlots touchSlots; // Only used by the input polling thread
 
 #define QUEUE_TOUCH 1
 #define QUEUE_PEN 2
@@ -132,14 +129,51 @@ static void pushToAll(int queueType, struct input_event evt) {
     }
 }
 
+static void touchUpdate(int devId, int x, int y) {
+    auto contact = touchSlots.find(devId);
+    if(!contact) return;
+
+    pushToAll(QUEUE_TOUCH, evt(EV_ABS, ABS_MT_SLOT, contact->slot));
+    pushToAll(QUEUE_TOUCH, evt(EV_ABS, ABS_MT_POSITION_X, x));
+    pushToAll(QUEUE_TOUCH, evt(EV_ABS, ABS_MT_POSITION_Y, y));
+    pushToAll(QUEUE_TOUCH, evt(EV_SYN, SYN_REPORT, 0));
+}
+
+static void touchRelease(int devId) {
+    auto contact = touchSlots.find(devId);
+    if(!contact) return;
+
+    touchSlots.release(devId);
+    pushToAll(QUEUE_TOUCH, evt(EV_ABS, ABS_MT_SLOT, contact->slot));
+    pushToAll(QUEUE_TOUCH, evt(EV_ABS, ABS_MT_TRACKING_ID, -1));
+    if(touchSlots.count() == 0) pushToAll(QUEUE_TOUCH, evt(EV_KEY, BTN_TOUCH, 0));
+    pushToAll(QUEUE_TOUCH, evt(EV_SYN, SYN_REPORT, 0));
+}
+
+static void touchPress(int devId, int x, int y) {
+    if(touchSlots.find(devId)) {
+        touchUpdate(devId, x, y);
+        return;
+    }
+
+    auto contact = touchSlots.add(devId);
+    if(!contact) return;
+
+    pushToAll(QUEUE_TOUCH, evt(EV_ABS, ABS_MT_SLOT, contact->slot));
+    pushToAll(QUEUE_TOUCH, evt(EV_ABS, ABS_MT_TRACKING_ID, contact->trackingId));
+    pushToAll(QUEUE_TOUCH, evt(EV_ABS, ABS_MT_PRESSURE, 100));
+    pushToAll(QUEUE_TOUCH, evt(EV_ABS, ABS_MT_POSITION_X, x));
+    pushToAll(QUEUE_TOUCH, evt(EV_ABS, ABS_MT_POSITION_Y, y));
+    if(touchSlots.count() == 1) pushToAll(QUEUE_TOUCH, evt(EV_KEY, BTN_TOUCH, 1));
+    pushToAll(QUEUE_TOUCH, evt(EV_SYN, SYN_REPORT, 0));
+}
+
 static void pollInputUpdates() {
     qtfb::ServerMessage message;
     if(clientConnection) {
         if(!clientConnection->pollServerPacket(message)) return;
         if(message.type == MESSAGE_USERINPUT) {
             // Did we get a packet?
-            char state_a;
-
             int xTranslate, yTranslate, dTranslate;
             switch(shimInputType) {
                 case SHIM_INPUT_RM1:
@@ -212,30 +246,14 @@ static void pollInputUpdates() {
             CERR << "[QTFB SHIM INPUT]: " << (int) message.userInput.inputType << ", " << message.userInput.x << ", " << message.userInput.y << " (Translated to " << xTranslate << ", " << yTranslate << ")" << std::endl;
             switch(message.userInput.inputType) {
                 case INPUT_TOUCH_PRESS:
-                    state_a = 1;
-                    pushToAll(QUEUE_TOUCH, evt(EV_ABS, ABS_MT_SLOT, 1));
-                    pushToAll(QUEUE_TOUCH, evt(EV_ABS, ABS_MT_TRACKING_ID, 50));
-                    pushToAll(QUEUE_TOUCH, evt(EV_ABS, ABS_MT_PRESSURE, 100));
-                    goto sendpos;
+                    touchPress(message.userInput.devId, xTranslate, yTranslate);
+                    break;
                 case INPUT_TOUCH_RELEASE:
-                    state_a = 0;
-                    pushToAll(QUEUE_TOUCH, evt(EV_ABS, ABS_MT_TRACKING_ID, -1));
-                    sendpos:
-                    if(state_a != 0) {
-                        pushToAll(QUEUE_TOUCH, evt(EV_ABS, ABS_MT_POSITION_X, xTranslate));
-                        pushToAll(QUEUE_TOUCH, evt(EV_ABS, ABS_MT_POSITION_Y, yTranslate));
-                    }
-                    if(state_a == 1 || state_a == 0) {
-                        pushToAll(QUEUE_TOUCH, evt(EV_KEY, BTN_TOUCH, state_a));
-                    }
-                    pushToAll(QUEUE_TOUCH, evt(EV_SYN, SYN_REPORT, 0));
+                    touchRelease(message.userInput.devId);
                     break;
-                case INPUT_TOUCH_UPDATE:{
-                    state_a = 2;
-                    goto sendpos;
+                case INPUT_TOUCH_UPDATE:
+                    touchUpdate(message.userInput.devId, xTranslate, yTranslate);
                     break;
-                }
-
 
 
                 case INPUT_PEN_PRESS:
@@ -381,7 +399,7 @@ static int fakeOrOverrideAbsInfo(
 {
     // Disregard original return value.
     struct input_absinfo *absinfo = reinterpret_cast<struct input_absinfo*>(ptr);
-    std::memset(absinfo, 0, sizeof(absinfo));
+    std::memset(absinfo, 0, sizeof(*absinfo));
 
     // realIoctl(fd, request, ptr);
     absinfo->minimum    = minVal;
@@ -409,6 +427,7 @@ static int fakeOrOverrideAbsInfo(
         CASE_FAMILY(name, RM2)                            \
         CASE_FAMILY(name, RMPP)                           \
         CASE_FAMILY(name, RMPPM)                          \
+        CASE_FAMILY(name, RMPPURE)                        \
     }                                                     \
     return -1;                                            \
 }
@@ -450,18 +469,28 @@ int inputShimIoctl(int fd, unsigned long request, char *ptr, int (*realIoctl)(in
                                         0, getMaxEventValueForTOUCH_Y(),
                                         100, 0, 0);
         }
+        if (IS_MATCHING_IOCTL_S(_IOC_READ, 'E', 0x40 + ABS_MT_TRACKING_ID, sizeof(input_absinfo))) {
+            return fakeOrOverrideAbsInfo(fd, request, ptr, realIoctl,
+                                        0, 0xFFFF,
+                                        0, 0, 0);
+        }
+        if (IS_MATCHING_IOCTL_S(_IOC_READ, 'E', 0x40 + ABS_MT_PRESSURE, sizeof(input_absinfo))) {
+            return fakeOrOverrideAbsInfo(fd, request, ptr, realIoctl,
+                                        0, 255,
+                                        0, 0, 0);
+        }
         if (IS_MATCHING_IOCTL_S(_IOC_READ, 'E', 0x40 + ABS_MT_ORIENTATION, sizeof(input_absinfo))) {
             struct input_absinfo *absinfo = reinterpret_cast<struct input_absinfo*>(ptr);
-            std::memset(absinfo, 0, sizeof(absinfo));
+            std::memset(absinfo, 0, sizeof(*absinfo));
             // int status = realIoctl(fd, request, ptr);
             absinfo->minimum = RM1_MIN_ORIENTATION;
             absinfo->maximum = RM1_MAX_ORIENTATION;
         }
         if (IS_MATCHING_IOCTL_S(_IOC_READ, 'E', 0x40 + ABS_MT_SLOT, sizeof(input_absinfo))) {
             struct input_absinfo *absinfo = reinterpret_cast<struct input_absinfo*>(ptr);
-            std::memset(absinfo, 0, sizeof(absinfo));
+            std::memset(absinfo, 0, sizeof(*absinfo));
             // int status = realIoctl(fd, request, ptr);
-            absinfo->maximum = 3;
+            absinfo->maximum = TOUCH_SLOT_COUNT - 1;
         }
 
         if(IS_MATCHING_IOCTL(_IOC_READ, 'E', 0x6)) {
@@ -479,6 +508,11 @@ int inputShimIoctl(int fd, unsigned long request, char *ptr, int (*realIoctl)(in
             SETBIT(EV_ABS, bits);
             SETBIT(EV_REL, bits);
             SETBIT(EV_KEY, bits);
+        }
+
+        if (cmdDir == _IOC_READ && cmdType == 'E' && cmdNr == (0x20 + EV_KEY)) {
+            unsigned long *bits = (unsigned long*) ptr;
+            SETBIT(BTN_TOUCH, bits);
         }
 
         if (cmdDir == _IOC_READ && cmdType == 'E' && cmdNr == (0x20 + EV_ABS)) {
