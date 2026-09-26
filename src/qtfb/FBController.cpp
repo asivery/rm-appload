@@ -263,6 +263,18 @@ void FBController::virtualKeyboardKeyUp(int key) {
 
 void FBController::touchEvent(QTouchEvent *me) {
     if(framebufferID != -1) {
+        if(me->type() == QEvent::TouchBegin && !activeTouches.empty()) {
+            QDEBUG << "QTFB releasing" << activeTouches.size() << "stale touch points";
+            releaseAllTouches();
+        }
+
+        if(me->type() == QEvent::TouchCancel) {
+            QDEBUG << "QTFB touch cancelled," << activeTouches.size() << "touch points active";
+            releaseAllTouches();
+            me->accept();
+            return;
+        }
+
         int lenPoints = me->points().length();
         if(lenPoints == 5 && !refreshedScreenAlready) {
             emit requestFullRefresh();
@@ -306,15 +318,39 @@ void FBController::touchEvent(QTouchEvent *me) {
                 case QEventPoint::State::Updated:
                     packet.inputType = INPUT_TOUCH_UPDATE;
                     break;
-                default: break;
+                case QEventPoint::State::Stationary:
+                default:
+                    continue; // For Stationary fingers and any other event, we don't want to send a PRESS event
             }
             // only forward touch points to the client that started inside the framebuffer area
             if(image && pressConv) {
+                if(packet.inputType == INPUT_TOUCH_RELEASE) activeTouches.erase(point.id());
+                else activeTouches[point.id()] = QPoint(x, y);
                 qtfb::management::forwardUserInput(framebufferID, packet);
             }
         }
     }
     me->accept();
+}
+
+void FBController::releaseAllTouches() {
+    for(const auto &entry : activeTouches) {
+        qtfb::UserInputContents packet {
+            .inputType = INPUT_TOUCH_RELEASE,
+            .devId = entry.first,
+            .x = entry.second.x(),
+            .y = entry.second.y(),
+            .d = 0,
+        };
+        qtfb::management::forwardUserInput(framebufferID, packet);
+    }
+
+    activeTouches.clear();
+}
+
+void FBController::touchUngrabEvent() {
+    QDEBUG << "QTFB touch ungrab," << activeTouches.size() << "touch points active";
+    releaseAllTouches();
 }
 
 void FBController::keyPressEvent(QKeyEvent *ke) {
