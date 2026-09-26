@@ -2,8 +2,9 @@
 #include <map>
 #include <optional>
 
-// Slots 0..3 kept below 4, because 5 fingers touch causes full screen refresh in AppLoad
-#define TOUCH_SLOT_COUNT 4
+// Slots 0..4 support for 5 fingers
+// 5 fingers will also trigger AppLoad's full screen refresh
+#define TOUCH_SLOT_COUNT 5
 
 struct TouchContact {
     int slot;

@@ -7,7 +7,8 @@ Inspired by [ddvk's awesome remarkable2-framebuffer](https://github.com/ddvk/rem
 
 \* Some programs incorrectly define the framebuffer structures (they hardcode the 32-bit variant of them, instead of relying on linux headers). In order to use them, please use `shim-32bit-structs.so` as the shim, as opposed to the usual `shim.so`.
 
-The emulated touchscreen supports multitouch with up to 4 fingers at once; further fingers are ignored.
+The emulated touchscreen supports multitouch with up to 5 fingers at once; further fingers are ignored.
+AppLoad causes a full screen refresh on a 5 fingers tap.
 
 ## Environment variables used by the shim:
 
