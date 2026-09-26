@@ -7,6 +7,8 @@ Inspired by [ddvk's awesome remarkable2-framebuffer](https://github.com/ddvk/rem
 
 \* Some programs incorrectly define the framebuffer structures (they hardcode the 32-bit variant of them, instead of relying on linux headers). In order to use them, please use `shim-32bit-structs.so` as the shim, as opposed to the usual `shim.so`.
 
+The emulated touchscreen supports multitouch with up to 4 fingers at once; further fingers are ignored.
+
 ## Environment variables used by the shim:
 
 - QTFB_SHIM_MODEL: Whether or not the shim should make the application think it's running on a particular reMarkable tablet (Values: 0, 1 (RM1), RM2, RMPP, RMPPM, RMPPURE. Default: 1) - 0 and 1 supported so as to maintain compatibility. Also changes QTFB_SHIM_INPUT_MODE's default.
