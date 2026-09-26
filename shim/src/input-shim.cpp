@@ -399,7 +399,7 @@ static int fakeOrOverrideAbsInfo(
 {
     // Disregard original return value.
     struct input_absinfo *absinfo = reinterpret_cast<struct input_absinfo*>(ptr);
-    std::memset(absinfo, 0, sizeof(absinfo));
+    std::memset(absinfo, 0, sizeof(*absinfo));
 
     // realIoctl(fd, request, ptr);
     absinfo->minimum    = minVal;
@@ -427,6 +427,7 @@ static int fakeOrOverrideAbsInfo(
         CASE_FAMILY(name, RM2)                            \
         CASE_FAMILY(name, RMPP)                           \
         CASE_FAMILY(name, RMPPM)                          \
+        CASE_FAMILY(name, RMPPURE)                        \
     }                                                     \
     return -1;                                            \
 }
@@ -468,18 +469,28 @@ int inputShimIoctl(int fd, unsigned long request, char *ptr, int (*realIoctl)(in
                                         0, getMaxEventValueForTOUCH_Y(),
                                         100, 0, 0);
         }
+        if (IS_MATCHING_IOCTL_S(_IOC_READ, 'E', 0x40 + ABS_MT_TRACKING_ID, sizeof(input_absinfo))) {
+            return fakeOrOverrideAbsInfo(fd, request, ptr, realIoctl,
+                                        0, 0xFFFF,
+                                        0, 0, 0);
+        }
+        if (IS_MATCHING_IOCTL_S(_IOC_READ, 'E', 0x40 + ABS_MT_PRESSURE, sizeof(input_absinfo))) {
+            return fakeOrOverrideAbsInfo(fd, request, ptr, realIoctl,
+                                        0, 255,
+                                        0, 0, 0);
+        }
         if (IS_MATCHING_IOCTL_S(_IOC_READ, 'E', 0x40 + ABS_MT_ORIENTATION, sizeof(input_absinfo))) {
             struct input_absinfo *absinfo = reinterpret_cast<struct input_absinfo*>(ptr);
-            std::memset(absinfo, 0, sizeof(absinfo));
+            std::memset(absinfo, 0, sizeof(*absinfo));
             // int status = realIoctl(fd, request, ptr);
             absinfo->minimum = RM1_MIN_ORIENTATION;
             absinfo->maximum = RM1_MAX_ORIENTATION;
         }
         if (IS_MATCHING_IOCTL_S(_IOC_READ, 'E', 0x40 + ABS_MT_SLOT, sizeof(input_absinfo))) {
             struct input_absinfo *absinfo = reinterpret_cast<struct input_absinfo*>(ptr);
-            std::memset(absinfo, 0, sizeof(absinfo));
+            std::memset(absinfo, 0, sizeof(*absinfo));
             // int status = realIoctl(fd, request, ptr);
-            absinfo->maximum = 3;
+            absinfo->maximum = TOUCH_SLOT_COUNT - 1;
         }
 
         if(IS_MATCHING_IOCTL(_IOC_READ, 'E', 0x6)) {
@@ -497,6 +508,11 @@ int inputShimIoctl(int fd, unsigned long request, char *ptr, int (*realIoctl)(in
             SETBIT(EV_ABS, bits);
             SETBIT(EV_REL, bits);
             SETBIT(EV_KEY, bits);
+        }
+
+        if (cmdDir == _IOC_READ && cmdType == 'E' && cmdNr == (0x20 + EV_KEY)) {
+            unsigned long *bits = (unsigned long*) ptr;
+            SETBIT(BTN_TOUCH, bits);
         }
 
         if (cmdDir == _IOC_READ && cmdType == 'E' && cmdNr == (0x20 + EV_ABS)) {
