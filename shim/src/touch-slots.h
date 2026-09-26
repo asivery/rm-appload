@@ -2,7 +2,7 @@
 #include <map>
 #include <optional>
 
-// Slots 0..3 kept below 4 because KOReader uses slot 4 for the pen
+// Slots 0..3 kept below 4, because 5 fingers touch causes full screen refresh in AppLoad
 #define TOUCH_SLOT_COUNT 4
 
 struct TouchContact {
