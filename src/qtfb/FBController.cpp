@@ -212,7 +212,7 @@ QRect FBController::convertQTFBRectToScreen(const QRect &input) {
 }
 
 void FBController::mouseEvent(QMouseEvent *me, int inputType) {
-    if(framebufferID != -1 && !me->points().isEmpty()) {
+    if(framebufferID != -1 && !me->points().isEmpty() && image) {
         const QEventPoint &point = me->points()[0];
         if(auto conv = convertPointToQTFBPixels(point.position())) {
             qtfb::UserInputContents packet {
@@ -262,7 +262,7 @@ void FBController::virtualKeyboardKeyUp(int key) {
 }
 
 void FBController::touchEvent(QTouchEvent *me) {
-    if(framebufferID != -1) {
+    if(framebufferID != -1 && image) {
         if(me->type() == QEvent::TouchBegin && !activeTouches.empty()) {
             QDEBUG << "QTFB releasing" << activeTouches.size() << "stale touch points";
             releaseAllTouches();
@@ -323,7 +323,7 @@ void FBController::touchEvent(QTouchEvent *me) {
                     continue; // For Stationary fingers and any other event, we don't want to send a PRESS event
             }
             // only forward touch points to the client that started inside the framebuffer area
-            if(image && pressConv) {
+            if(pressConv) {
                 if(packet.inputType == INPUT_TOUCH_RELEASE) activeTouches.erase(point.id());
                 else activeTouches[point.id()] = QPoint(x, y);
                 qtfb::management::forwardUserInput(framebufferID, packet);
@@ -349,6 +349,7 @@ void FBController::releaseAllTouches() {
 }
 
 void FBController::touchUngrabEvent() {
+    if(activeTouches.empty()) return;
     QDEBUG << "QTFB touch ungrab," << activeTouches.size() << "touch points active";
     releaseAllTouches();
 }
