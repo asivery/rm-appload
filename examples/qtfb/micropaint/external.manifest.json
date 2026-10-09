@@ -1,0 +1,12 @@
+{
+    "name": "Micropaint",
+    "application": "micropaint",
+    "id": "anysize",
+    "args": [
+        "400",
+        "200"
+    ],
+    "qtfb": true,
+    "aspectRatio": "auto",
+    "supportsScaling": true
+}
