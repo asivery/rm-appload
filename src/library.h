@@ -115,6 +115,11 @@ namespace appload::library {
     };
 
     int loadApplications();
+
+    // The launcher's folders, kept in folders.json in the applications'
+    // directory as {"<app id>": "<folder>"}. The user puts apps in folders.
+    QString folderOf(const QString &appID);
+    void setFolder(const QStringList &appIDs, const QString &folder);
     void terminateExternal(qint64 pid);
     void addGlobalLibraryHandle(AppLoadLibrary *ptr);
     void removeGlobalLibraryHandle(AppLoadLibrary *ptr);

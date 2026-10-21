@@ -2,11 +2,48 @@
 #include "log.h"
 #include <QDebug>
 #include <QDir>
+#include <QSaveFile>
 
 namespace appload::library {
     static std::map<QString, LoadedApplication*> applications;
     static std::map<QString, ExternalApplication*> externalApplications;
+    static QJsonObject folders;
 };
+
+static QString foldersPath() {
+    return QString(APPLICATION_DIRECTORY_ROOT) + "/folders.json";
+}
+
+static void loadFolders() {
+    QFile file(foldersPath());
+    appload::library::folders = QJsonObject();
+    if(!file.open(QIODevice::ReadOnly)) return;
+    QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
+    if(doc.isObject()) {
+        appload::library::folders = doc.object();
+    } else {
+        CERR << "Invalid JSON data in " << foldersPath().toStdString() << std::endl;
+    }
+}
+
+QString appload::library::folderOf(const QString &appID) {
+    return folders.value(appID).toString().trimmed();
+}
+
+void appload::library::setFolder(const QStringList &appIDs, const QString &folder) {
+    QString name = folder.trimmed();
+    for(const auto &id : appIDs) {
+        if(name.isEmpty()) {
+            folders.remove(id);
+        } else {
+            folders.insert(id, name);
+        }
+    }
+    QSaveFile file(foldersPath());
+    if(!file.open(QIODevice::WriteOnly) || file.write(QJsonDocument(folders).toJson()) < 0 || !file.commit()) {
+        CERR << "Unable to save " << foldersPath().toStdString() << std::endl;
+    }
+}
 
 static QString randString(int len)
 {
@@ -172,6 +209,7 @@ appload::vk::Layout *appload::library::defaultLayout = NULL;
 
 int appload::library::loadApplications() {
     loadingMutex.lock();
+    loadFolders();
     defaultLayout = new appload::vk::Layout(NULL);
     QResource defaultKeyboardLayout(QString(":/appload/keyboard/default.layout.json"));
     if(!defaultKeyboardLayout.isValid()) {
