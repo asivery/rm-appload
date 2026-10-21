@@ -417,7 +417,11 @@ qtfb::management::ClientBackend::~ClientBackend() {
 static void managementMainThread(){
     CERR << "In main management thread." << std::endl;
     CERR << "Creating socket..." << std::endl;
+#ifdef Q_OS_DARWIN
+    int serverSocket = socket(AF_UNIX, SOCK_STREAM, 0);
+#else
     int serverSocket = socket(AF_UNIX, SOCK_SEQPACKET, 0);
+#endif
     if(serverSocket == -1) {
         CERR << "Failed to initialize the socket!" << std::endl;
         return;
@@ -425,6 +429,9 @@ static void managementMainThread(){
     struct sockaddr_un addr;
     addr.sun_family = AF_UNIX;
     strncpy(addr.sun_path, SOCKET_PATH, sizeof(addr.sun_path) - 1);
+#ifdef Q_OS_DARWIN
+    addr.sun_len = SUN_LEN(&addr);
+#endif
     unlink(SOCKET_PATH);
     if (bind(serverSocket, (struct sockaddr *) &addr, sizeof(addr)) == -1) {
         CERR << "Failed to bind the socket!" << std::endl;
