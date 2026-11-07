@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include <QAbstractEventDispatcher>
+#include <QCoreApplication>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -202,9 +203,20 @@ static void _listeningThread(char *sockPath, QString appID){
     }
 
     delete[] inboundBuffer;
-    appload::management::terminate(appID);
-    close(pipeFD[0]);
-    CERR << "Application " << appID.toStdString() << " terminated." << std::endl;
+    // Hand the teardown to the GUI thread. terminate() edits `sockets` and
+    // closeUIInstance() unloads QML; both race the GUI thread if run here
+    // (issue #82). If the GUI already terminated this app, its entry is gone
+    // and there is nothing left to do. The read end of the pipe is closed
+    // there too, so a terminate() on the GUI thread never writes to a pipe
+    // without a reader.
+    int pipeReadFD = pipeFD[0];
+    QMetaObject::invokeMethod(qApp, [appID, pipeReadFD]() {
+        if(appload::management::isBackendRunningFor(appID)) {
+            appload::management::terminate(appID);
+        }
+        close(pipeReadFD);
+        CERR << "Application " << appID.toStdString() << " terminated." << std::endl;
+    }, Qt::QueuedConnection);
 }
 
 void appload::management::createListeningSocket(QString appID, char *sockPath) {
