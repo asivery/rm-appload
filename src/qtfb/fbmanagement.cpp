@@ -3,6 +3,11 @@
 #include "common.h"
 #include <iostream>
 #include <mutex>
+#include <atomic>
+#include <chrono>
+#include <future>
+#include <memory>
+#include <QQuickWindow>
 /*
 My implementation of the shared QT-framebuffer idea works by:
 - Having all the clients communicate with the server via a UNIX socket, which governs
@@ -294,9 +299,62 @@ static int invokeOnConnectedFramebuffer(qtfb::management::ClientConnection *conn
     return RESP_OK;
 }
 
-static inline void safetyWaitForEventLoopToCatchUp() {
-    using namespace std::chrono_literals;
-    std::this_thread::sleep_for(1s);
+// How long a client thread may wait for its change to reach the screen. A
+// frame normally takes a few tens of milliseconds; the bound only matters if
+// no frame comes at all (minimized window, display asleep), and keeps a
+// client from ever being blocked for long.
+static constexpr auto FRAME_WAIT_TIMEOUT = std::chrono::milliseconds(300);
+
+// Run `change` on the controller's (GUI) thread, then block the calling
+// client thread until the window has rendered one frame with that change, or
+// until FRAME_WAIT_TIMEOUT passes.
+//
+// Why wait at all: the client usually sends drawing updates right after a
+// refresh-mode change or a full-refresh request, and those should be drawn
+// with the new state. Ordering on the GUI thread is already guaranteed (both
+// are queued invocations from this thread to the same object, and Qt delivers
+// them FIFO), so all that is left is to let the change reach the screen once.
+// This replaces a fixed 1 s sleep, which stalled every mode request, even
+// one that changed nothing.
+//
+// `change` returns false when there is nothing to wait for (e.g. the mode is
+// already the requested one); the client then continues immediately.
+static void runOnGuiAndAwaitFrame(QPointer<FBController> controller, std::function<bool(FBController *)> change) {
+    auto done = std::make_shared<std::promise<void>>();
+    auto settled = std::make_shared<std::atomic_bool>(false);
+    auto settle = [done, settled]() {
+        if(!settled->exchange(true)) done->set_value();
+    };
+    std::future<void> frame = done->get_future();
+
+    QMetaObject::invokeMethod(controller, [controller, change, settle]() {
+        if(controller.isNull() || !change(controller.data())) {
+            settle();
+            return;
+        }
+        QQuickWindow *window = controller->window();
+        if(window == nullptr || !window->isVisible()) {
+            settle();
+            return;
+        }
+        // Both signals may be emitted on the render thread; settle() is
+        // thread-safe, so resolve directly there on whichever comes first
+        // (a custom scene-graph render loop is not obliged to emit
+        // frameSwapped), then disconnect.
+        auto connections = std::make_shared<std::pair<QMetaObject::Connection, QMetaObject::Connection>>();
+        auto once = [settle, connections]() {
+            QObject::disconnect(connections->first);
+            QObject::disconnect(connections->second);
+            settle();
+        };
+        connections->first = QObject::connect(window, &QQuickWindow::frameSwapped, window, once, Qt::DirectConnection);
+        connections->second = QObject::connect(window, &QQuickWindow::afterRendering, window, once, Qt::DirectConnection);
+        window->update();
+    }, Qt::QueuedConnection);
+
+    if(frame.wait_for(FRAME_WAIT_TIMEOUT) == std::future_status::timeout) {
+        CERR << "No frame within " << FRAME_WAIT_TIMEOUT.count() << " ms after a display change; continuing." << std::endl;
+    }
 }
 
 static void managementClientThread(int incomingFD) {
@@ -328,19 +386,20 @@ static void managementClientThread(int incomingFD) {
                         CERR << "The client tried to set refresh mode to an undefined value!" << std::endl;
                         return RESP_ERR;
                     }
-                    QMetaObject::invokeMethod(controller, [controller, refresh]() {
-                        controller->setRefreshMode(refresh);
+                    runOnGuiAndAwaitFrame(controller, [refresh](FBController *c) {
+                        if(c->refreshMode() == refresh) return false;
+                        c->setRefreshMode(refresh);
+                        return true;
                     });
-                    safetyWaitForEventLoopToCatchUp();
                     return RESP_OK;
                 });
                 break;
             case MESSAGE_REQUEST_FULL_REFRESH:
                 status = invokeOnConnectedFramebuffer(&connection, [=](auto controller) {
-                    QMetaObject::invokeMethod(controller, [controller]() {
-                        emit controller->requestFullRefresh();
+                    runOnGuiAndAwaitFrame(controller, [](FBController *c) {
+                        emit c->requestFullRefresh();
+                        return true;
                     });
-                    safetyWaitForEventLoopToCatchUp();
                     return RESP_OK;
                 });
                 break;
